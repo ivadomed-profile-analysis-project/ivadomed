@@ -21,11 +21,35 @@ from ivadomed import inference as imed_inference
 from ivadomed.loader import utils as imed_loader_utils, loader as imed_loader, film as imed_film
 from loguru import logger
 from pathlib import Path
+from time import time
 
 cudnn.benchmark = True
 
 # List of not-default available models i.e. different from Unet
 MODEL_LIST = ['Modified3DUNet', 'HeMISUnet', 'FiLMedUnet', 'resnet18', 'densenet121', 'Countception']
+
+
+# Very naive timer class to get a feel of how we're going to time each component. Later this week we should replace
+# print statements with logging time measurements to a log file.
+class Timer:
+    def __init__(self, comp_name):
+        self.comp = comp_name
+        self.start_time = 0.0
+
+    def start(self):
+        # This ugliness will soon be replaced.
+        print("********************************************************************************************")
+        print(f'TIMER FOR COMPONENT: {self.comp} STARTING NOW.')
+        print("********************************************************************************************")
+        self.start_time = time()
+
+    def end(self):
+        end = time()
+        elapsed = end - self.start_time
+        print("********************************************************************************************")
+        print(f'TIMER FOR COMPONENT: {self.comp} ENDED.')
+        print(f'ELAPSED TIME: {elapsed:0.10f} s.')
+        print("********************************************************************************************")
 
 
 def get_parser():
@@ -161,7 +185,7 @@ def set_model_params(context, loader_params):
             model_params.update(context[model_context_list[i]])
     elif len(model_context_list) > 1:
         logger.error('ERROR: Several models are selected in the configuration file: {}.'
-              'Please select only one (i.e. only one where: "applied": true).'.format(model_context_list))
+                     'Please select only one (i.e. only one where: "applied": true).'.format(model_context_list))
         exit()
 
     model_params['is_2d'] = False if "Modified3DUNet" in model_params['name'] else model_params['is_2d']
@@ -556,18 +580,24 @@ def run_main():
     args = parser.parse_args()
 
     # Get context from configuration file
+    t = Timer('PARSE-CONFIG-FILE')
+    t.start()
     path_config_file = args.config
     context = imed_config_manager.ConfigurationManager(path_config_file).get_config()
 
     context["command"] = imed_utils.get_command(args, context)
     context["path_output"] = imed_utils.get_path_output(args, context)
     context["loader_parameters"]["path_data"] = imed_utils.get_path_data(args, context)
+    t.end()
 
+    t = Timer('RUN-COMMAND')
+    t.start()
     # Run command
     run_command(context=context,
                 n_gif=args.gif if args.gif is not None else 0,
                 thr_increment=args.thr_increment if args.thr_increment else None,
                 resume_training=bool(args.resume_training))
+    t.end()
 
 
 if __name__ == "__main__":
