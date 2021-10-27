@@ -2,6 +2,9 @@ import copy
 import datetime
 import random
 import time
+import subprocess
+import psutil
+import csv
 
 import numpy as np
 import torch
@@ -26,7 +29,7 @@ cudnn.benchmark = True
 
 
 def train(model_params, dataset_train, dataset_val, training_params, path_output, device,
-          cuda_available=True, metric_fns=None, n_gif=0, resume_training=False, debugging=False):
+          cuda_available=True, metric_fns=None, n_gif=0, resume_training=False, debugging=False, log_path=None):
     """Main command to train the network.
 
     Args:
@@ -50,6 +53,14 @@ def train(model_params, dataset_train, dataset_val, training_params, path_output
         float, float, float, float: best_training_dice, best_training_loss, best_validation_dice,
             best_validation_loss.
     """
+
+    # Create log file to store per-epoch statistics.
+    with open(log_path, 'w+', newline='') as csvfile:
+        fieldnames = ['time', 'train_gpu_util', 'train_cpu_util', 'val_gpu_util', 'val_cpu_util']
+        csvwriter = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        csvwriter.writeheader()
+
+
     # Write the metrics, images, etc to TensorBoard format
     writer = SummaryWriter(log_dir=path_output)
 
@@ -206,6 +217,17 @@ def train(model_params, dataset_train, dataset_val, training_params, path_output
         logger.info(msg)
         tqdm.write(msg)
 
+        # TRAINING GPU UTIL STAT
+        train_result = subprocess.run(['nvidia-smi', '--query-gpu=utilization.gpu', '--format=csv,noheader,nounits'],
+                                stdout=subprocess.PIPE, universal_newlines=True)
+        train_gpu = int(train_result.stdout) / 100
+        print('TTRAINING GPU UTILIZATION: ', train_gpu)
+
+        # TRAINING CPU UTIL STAT
+        curr_proc = psutil.Process()
+        train_cpu = curr_proc.cpu_percent() / 100
+        print('TRAINING CPU UTILIZATION: ', train_cpu)
+
         # CURRICULUM LEARNING
         if model_params["name"] == "HeMISUnet":
             # Increase the probability of a missing modality
@@ -280,6 +302,24 @@ def train(model_params, dataset_train, dataset_val, training_params, path_output
             total_time = end_time - start_time
             msg_epoch = "Epoch {} took {:.2f} seconds.".format(epoch, total_time)
             logger.info(msg_epoch)
+
+            # VALIDATION GPU UTIL STAT
+            val_result = subprocess.run(['nvidia-smi', '--query-gpu=utilization.gpu', '--format=csv,noheader,nounits'],
+                                    stdout=subprocess.PIPE, universal_newlines=True)
+            val_gpu = int(val_result.stdout)/100
+            print('VALIDATION GPU UTILIZATION: ', val_gpu)
+
+            # VALIDATION CPU UTIL STAT
+            curr_proc = psutil.Process()
+            val_cpu = curr_proc.cpu_percent() / 100
+            print('VALIDATION CPU UTILIZATION: ', val_cpu)
+
+            # Update per epoch with statistics.
+            with open(log_path, 'a') as csvfile:
+                csvwriter = csv.writer(csvfile, delimiter=',', lineterminator='\n')
+                append = [total_time, train_gpu, train_cpu, val_gpu, val_cpu]
+                csvwriter.writerow(append)
+
 
             # UPDATE BEST RESULTS
             if val_loss_total_avg < best_validation_loss:

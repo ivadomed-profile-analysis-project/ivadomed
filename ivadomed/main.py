@@ -64,6 +64,7 @@ def get_parser():
     command_group.add_argument("--segment", dest='segment', action='store_true',
                                help="Perform segmentation on data.")
 
+
     parser.add_argument("-c", "--config", required=True, type=str,
                         help="Path to configuration file.")
 
@@ -92,6 +93,10 @@ def get_parser():
                                     'for resume training. This training state is saved everytime a new best model is saved in the output directory specified with flag "--path-output"')
     optional_args.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
                                help='Shows function documentation.')
+
+    # Per-epoch log path.
+    parser.add_argument("--log", dest='log', required=True, type=str,
+                               help="Path to log file.")
 
     return parser
 
@@ -316,7 +321,7 @@ def run_segment_command(context, model_params):
                                            str(Path(pred_path, subject)).replace(extension, ''))
 
 
-def run_command(context, n_gif=0, thr_increment=None, resume_training=False):
+def run_command(context, n_gif=0, thr_increment=None, resume_training=False, log_path=None):
     """Run main command.
 
     This function is central in the ivadomed project as training / testing / evaluation commands
@@ -440,7 +445,8 @@ def run_command(context, n_gif=0, thr_increment=None, resume_training=False):
             metric_fns=metric_fns,
             n_gif=n_gif,
             resume_training=resume_training,
-            debugging=context["debugging"])
+            debugging=context["debugging"],
+            log_path=log_path)
 
     if thr_increment:
         # LOAD DATASET
@@ -590,13 +596,17 @@ def run_main():
     context["loader_parameters"]["path_data"] = imed_utils.get_path_data(args, context)
     t.end()
 
+    log_path = args.log
+    print('LOG PATH IS: ', log_path)
+
     t = Timer('RUN-COMMAND')
     t.start()
     # Run command
     run_command(context=context,
                 n_gif=args.gif if args.gif is not None else 0,
                 thr_increment=args.thr_increment if args.thr_increment else None,
-                resume_training=bool(args.resume_training))
+                resume_training=bool(args.resume_training),
+                log_path=log_path)
     t.end()
 
 
