@@ -27,9 +27,24 @@ from ivadomed.loader.balanced_sampler import BalancedSampler
 
 cudnn.benchmark = True
 
+# Very naive timer class to get a feel of how we're going to time each component. Later this week we should replace
+# print statements with logging time measurements to a log file.
+class Timer:
+    def __init__(self):
+        self.start_time = 0.0
+
+    def start(self):
+        self.start_time = time()
+
+    def end(self):
+        end = time()
+        elapsed = end - self.start_time
+
+
 
 def train(model_params, dataset_train, dataset_val, training_params, path_output, device,
-          cuda_available=True, metric_fns=None, n_gif=0, resume_training=False, debugging=False, log_path=None):
+          cuda_available=True, metric_fns=None, n_gif=0, resume_training=False, debugging=False, log_train_path=None, log_val_path=None, log_sys_path=None,
+          train_start=None):
     """Main command to train the network.
 
     Args:
@@ -54,9 +69,15 @@ def train(model_params, dataset_train, dataset_val, training_params, path_output
             best_validation_loss.
     """
 
-    # Create log file to store per-epoch statistics.
-    with open(log_path, 'w+', newline='') as csvfile:
-        fieldnames = ['time', 'train_gpu_util', 'train_cpu_util', 'val_gpu_util', 'val_cpu_util']
+    # Create log file to store per-mini batch statistics for training.
+    with open(log_val_path, 'w+', newline='') as csvfile:
+        fieldnames = ['time', 'val_gpu_util', 'val_cpu_util', 'val_gpu_mem', 'val_main_mem']
+        csvwriter = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        csvwriter.writeheader()
+
+    # Create log file to store per-mini batch statistics for validation.
+    with open(log_train_path, 'w+', newline='') as csvfile:
+        fieldnames = ['time', 'train_gpu_util', 'train_cpu_util', 'train_gpu_mem', 'train_main_mem']
         csvwriter = csv.DictWriter(csvfile, fieldnames=fieldnames)
         csvwriter.writeheader()
 
@@ -168,6 +189,9 @@ def train(model_params, dataset_train, dataset_val, training_params, path_output
         train_loss_total, train_dice_loss_total = 0.0, 0.0
         num_steps = 0
         for i, batch in enumerate(train_loader):
+
+            start = time.time()
+
             # GET SAMPLES
             if model_params["name"] == "HeMISUnet":
                 input_samples = imed_utils.cuda(imed_utils.unstack_tensors(batch["input"]), cuda_available)
@@ -188,10 +212,12 @@ def train(model_params, dataset_train, dataset_val, training_params, path_output
             else:
                 preds = model(input_samples)
 
+
             # LOSS
             loss = loss_fct(preds, gt_samples)
             train_loss_total += loss.item()
             train_dice_loss_total += loss_dice_fct(preds, gt_samples).item()
+
 
             # UPDATE OPTIMIZER
             optimizer.zero_grad()
@@ -201,9 +227,34 @@ def train(model_params, dataset_train, dataset_val, training_params, path_output
                 scheduler.step()
             num_steps += 1
 
+            # TRAINING GPU UTIL STAT
+            train_result = subprocess.run(
+                ['nvidia-smi', '--query-gpu=utilization.gpu', '--format=csv,noheader,nounits'],
+                stdout=subprocess.PIPE, universal_newlines=True)
+            train_gpu_util = int(train_result.stdout) / 100
+
+            train_result = subprocess.run(
+                ['nvidia-smi', '--query-gpu=utilization.memory', '--format=csv,noheader,nounits'],
+                stdout=subprocess.PIPE, universal_newlines=True)
+            train_gpu_mem = int(train_result.stdout) / 100
+
+            # TRAINING CPU UTIL STAT
+            train_cpu_util = psutil.cpu_percent() / 100
+
+            train_cpu_mem = psutil.virtual_memory().percent / 100
+
             if i == 0 and debugging:
                 imed_visualize.save_tensorboard_img(writer, epoch, "Train", input_samples, gt_samples, preds,
                                                     is_three_dim=not model_params["is_2d"])
+
+            end = time.time()
+            total = end - start
+
+            # Update per mini batch with statistics.
+            with open(log_train_path, 'a') as csvfile:
+                csvwriter = csv.writer(csvfile, delimiter=',', lineterminator='\n')
+                append = [total, train_gpu_util, train_gpu_mem, train_cpu_util, train_cpu_mem]
+                csvwriter.writerow(append)
 
         if not step_scheduler_batch:
             scheduler.step()
@@ -217,16 +268,20 @@ def train(model_params, dataset_train, dataset_val, training_params, path_output
         logger.info(msg)
         tqdm.write(msg)
 
-        # TRAINING GPU UTIL STAT
-        train_result = subprocess.run(['nvidia-smi', '--query-gpu=utilization.gpu', '--format=csv,noheader,nounits'],
-                                stdout=subprocess.PIPE, universal_newlines=True)
-        train_gpu = int(train_result.stdout) / 100
-        print('TTRAINING GPU UTILIZATION: ', train_gpu)
+        train_result = subprocess.run(
+            ['nvidia-smi', '--query-gpu=utilization.gpu', '--format=csv,noheader,nounits'],
+            stdout=subprocess.PIPE, universal_newlines=True)
+        train_gpu_util = int(train_result.stdout) / 100
+
+        train_result = subprocess.run(
+            ['nvidia-smi', '--query-gpu=utilization.memory', '--format=csv,noheader,nounits'],
+            stdout=subprocess.PIPE, universal_newlines=True)
+        train_gpu_mem = int(train_result.stdout) / 100
 
         # TRAINING CPU UTIL STAT
-        curr_proc = psutil.Process()
-        train_cpu = curr_proc.cpu_percent() / 100
-        print('TRAINING CPU UTILIZATION: ', train_cpu)
+        train_cpu_util = psutil.cpu_percent() / 100
+
+        train_cpu_mem = psutil.virtual_memory().percent / 100
 
         # CURRICULUM LEARNING
         if model_params["name"] == "HeMISUnet":
@@ -242,6 +297,9 @@ def train(model_params, dataset_train, dataset_val, training_params, path_output
         if dataset_val:
             for i, batch in enumerate(val_loader):
                 with torch.no_grad():
+
+                    start = time.time()
+
                     # GET SAMPLES
                     if model_params["name"] == "HeMISUnet":
                         input_samples = imed_utils.cuda(imed_utils.unstack_tensors(batch["input"]), cuda_available)
@@ -257,6 +315,22 @@ def train(model_params, dataset_train, dataset_val, training_params, path_output
                     else:
                         preds = model(input_samples)
 
+                    # TRAINING GPU UTIL STAT
+                    val_result = subprocess.run(
+                        ['nvidia-smi', '--query-gpu=utilization.gpu', '--format=csv,noheader,nounits'],
+                        stdout=subprocess.PIPE, universal_newlines=True)
+                    val_gpu_util = int(train_result.stdout) / 100
+
+                    val_result = subprocess.run(
+                        ['nvidia-smi', '--query-gpu=utilization.memory', '--format=csv,noheader,nounits'],
+                        stdout=subprocess.PIPE, universal_newlines=True)
+                    val_gpu_mem = int(train_result.stdout) / 100
+
+                    # TRAINING CPU UTIL STAT
+                    val_cpu_util = psutil.cpu_percent() / 100
+
+                    val_cpu_mem = psutil.virtual_memory().percent / 100
+
                     # LOSS
                     loss = loss_fct(preds, gt_samples)
                     val_loss_total += loss.item()
@@ -271,6 +345,15 @@ def train(model_params, dataset_train, dataset_val, training_params, path_output
                                     gif_dict["slice_id"][i_gif] == met.__getitem__('slice_index'):
                                 overlap = imed_visualize.overlap_im_seg(im, pr)
                                 gif_dict["gif"][i_gif].add(overlap, label=str(epoch))
+
+                    end = time.time()
+                    total = end - start
+
+                    # Update per mini batch with statistics.
+                    with open(log_val_path, 'a') as csvfile:
+                        csvwriter = csv.writer(csvfile, delimiter=',', lineterminator='\n')
+                        append = [total, val_gpu_util, val_gpu_mem, val_cpu_util, val_cpu_mem]
+                        csvwriter.writerow(append)
 
                 num_steps += 1
 
@@ -303,22 +386,16 @@ def train(model_params, dataset_train, dataset_val, training_params, path_output
             msg_epoch = "Epoch {} took {:.2f} seconds.".format(epoch, total_time)
             logger.info(msg_epoch)
 
-            # VALIDATION GPU UTIL STAT
-            val_result = subprocess.run(['nvidia-smi', '--query-gpu=utilization.gpu', '--format=csv,noheader,nounits'],
-                                    stdout=subprocess.PIPE, universal_newlines=True)
-            val_gpu = int(val_result.stdout)/100
-            print('VALIDATION GPU UTILIZATION: ', val_gpu)
+            # # VALIDATION GPU UTIL STAT
+            # val_result = subprocess.run(['nvidia-smi', '--query-gpu=utilization.gpu', '--format=csv,noheader,nounits'],
+            #                         stdout=subprocess.PIPE, universal_newlines=True)
+            # val_gpu = int(val_result.stdout)/100
+            # print('VALIDATION GPU UTILIZATION: ', val_gpu)
+            #
+            # # VALIDATION CPU UTIL STAT
+            # val_cpu = psutil.cpu_percent() / 100
+            # print('VALIDATION CPU UTILIZATION: ', val_cpu)
 
-            # VALIDATION CPU UTIL STAT
-            curr_proc = psutil.Process()
-            val_cpu = curr_proc.cpu_percent() / 100
-            print('VALIDATION CPU UTILIZATION: ', val_cpu)
-
-            # Update per epoch with statistics.
-            with open(log_path, 'a') as csvfile:
-                csvwriter = csv.writer(csvfile, delimiter=',', lineterminator='\n')
-                append = [total_time, train_gpu, train_cpu, val_gpu, val_cpu]
-                csvwriter.writerow(append)
 
 
             # UPDATE BEST RESULTS
@@ -349,6 +426,11 @@ def train(model_params, dataset_train, dataset_val, training_params, path_output
                 if patience_count >= training_params["training_time"]["early_stopping_patience"]:
                     logger.info("Stopping training due to {} epochs without improvements".format(patience_count))
                     break
+
+    train_end = time.time()
+    train_total = train_end - train_start
+
+    start = time.time()
 
     # Save final model
     final_model_path = Path(path_output, "final_model.pt")
@@ -395,6 +477,36 @@ def train(model_params, dataset_train, dataset_val, training_params, path_output
     logger.info('begin ' + time.strftime('%H:%M:%S', time.localtime(begin_time)) + "| End " +
           time.strftime('%H:%M:%S', time.localtime(final_time)) +
           "| duration " + str(datetime.timedelta(seconds=duration_time)))
+
+    # POST PROCESSING STATS
+    post_result = subprocess.run(
+        ['nvidia-smi', '--query-gpu=utilization.gpu', '--format=csv,noheader,nounits'],
+        stdout=subprocess.PIPE, universal_newlines=True)
+    post_gpu_util = int(post_result.stdout) / 100
+
+    post_result = subprocess.run(
+        ['nvidia-smi', '--query-gpu=utilization.memory', '--format=csv,noheader,nounits'],
+        stdout=subprocess.PIPE, universal_newlines=True)
+    post_gpu_mem = int(post_result.stdout) / 100
+
+    # POST CPU UTIL STAT
+    post_cpu_util = psutil.cpu_percent() / 100
+
+    post_cpu_mem = psutil.virtual_memory().percent / 100
+
+    end = time.time()
+    total = end - start
+
+    with open(log_sys_path, 'a') as csvfile:
+        csvwriter = csv.writer(csvfile, delimiter=',', lineterminator='\n')
+        append = ['TRAIN', train_total, train_gpu_util, train_gpu_mem, train_cpu_util, train_cpu_mem]
+        csvwriter.writerow(append)
+
+    with open(log_sys_path, 'a') as csvfile:
+        csvwriter = csv.writer(csvfile, delimiter=',', lineterminator='\n')
+        append = ['POST', total, post_gpu_util, post_gpu_mem, post_cpu_util, post_cpu_mem]
+        csvwriter.writerow(append)
+
 
     return best_training_dice, best_training_loss, best_validation_dice, best_validation_loss
 

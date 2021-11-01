@@ -8,6 +8,9 @@ import sys
 import platform
 import multiprocessing
 import re
+import csv
+import subprocess
+import psutil
 
 from ivadomed.loader.bids_dataframe import BidsDataframe
 from ivadomed import evaluation as imed_evaluation
@@ -21,7 +24,7 @@ from ivadomed import inference as imed_inference
 from ivadomed.loader import utils as imed_loader_utils, loader as imed_loader, film as imed_film
 from loguru import logger
 from pathlib import Path
-from time import time
+import time
 
 cudnn.benchmark = True
 
@@ -41,10 +44,10 @@ class Timer:
         print("********************************************************************************************")
         print(f'TIMER FOR COMPONENT: {self.comp} STARTING NOW.')
         print("********************************************************************************************")
-        self.start_time = time()
+        self.start_time = time.time()
 
     def end(self):
-        end = time()
+        end = time.time()
         elapsed = end - self.start_time
         print("********************************************************************************************")
         print(f'TIMER FOR COMPONENT: {self.comp} ENDED.')
@@ -63,7 +66,6 @@ def get_parser():
                                help="Perform testing on trained model.")
     command_group.add_argument("--segment", dest='segment', action='store_true',
                                help="Perform segmentation on data.")
-
 
     parser.add_argument("-c", "--config", required=True, type=str,
                         help="Path to configuration file.")
@@ -94,9 +96,16 @@ def get_parser():
     optional_args.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
                                help='Shows function documentation.')
 
-    # Per-epoch log path.
-    parser.add_argument("--log", dest='log', required=True, type=str,
-                               help="Path to log file.")
+    # Per-mini batch log path.
+    parser.add_argument("--tlog", dest='tlog', required=True, type=str,
+                        help="Path to train log file.")
+
+    parser.add_argument("--vlog", dest='vlog', required=True, type=str,
+                        help="Path to val log file.")
+
+    # System log path.
+    parser.add_argument("--slog", dest='slog', required=True, type=str,
+                        help="Path to system log file.")
 
     return parser
 
@@ -148,7 +157,23 @@ def get_dataset(bids_df, loader_params, data_lst, transform_params, cuda_availab
                                                                   'transforms_params': transform_params,
                                                                   'dataset_type': ds_type}}, device=device,
                                   cuda_available=cuda_available)
-    return ds
+
+    data_result = subprocess.run(
+        ['nvidia-smi', '--query-gpu=utilization.gpu', '--format=csv,noheader,nounits'],
+        stdout=subprocess.PIPE, universal_newlines=True)
+    data_gpu_util = int(data_result.stdout) / 100
+
+    data_result = subprocess.run(
+        ['nvidia-smi', '--query-gpu=utilization.memory', '--format=csv,noheader,nounits'],
+        stdout=subprocess.PIPE, universal_newlines=True)
+    data_gpu_mem = int(data_result.stdout) / 100
+
+    # TRAINING CPU UTIL STAT
+    data_cpu_util = psutil.cpu_percent() / 100
+
+    data_cpu_mem = psutil.virtual_memory().percent / 100
+
+    return ds, data_gpu_util, data_cpu_util, data_gpu_mem, data_cpu_mem
 
 
 def save_config_file(context, path_output):
@@ -321,7 +346,8 @@ def run_segment_command(context, model_params):
                                            str(Path(pred_path, subject)).replace(extension, ''))
 
 
-def run_command(context, n_gif=0, thr_increment=None, resume_training=False, log_path=None):
+def run_command(context, n_gif=0, thr_increment=None, resume_training=False, tlog_path=None, vlog_path=None,
+                slog_path=None):
     """Run main command.
 
     This function is central in the ivadomed project as training / testing / evaluation commands
@@ -347,6 +373,16 @@ def run_command(context, n_gif=0, thr_increment=None, resume_training=False, log
             * If "segment" command: No return value.
 
     """
+
+    # DATASET+LOADER START
+    data_start = time.time()
+
+    # Create log file to store per-mini batch statistics for training.
+    with open(slog_path, 'w+', newline='') as csvfile:
+        fieldnames = ['comp', 'time', 'gpu_util', 'cpu_util', 'gpu_mem', 'main_mem']
+        csvwriter = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        csvwriter.writeheader()
+
     command = copy.deepcopy(context.get("command"))
     path_output = set_output_path(context)
     path_log = Path(context.get('path_output'), context.get('log_file'))
@@ -413,13 +449,45 @@ def run_command(context, n_gif=0, thr_increment=None, resume_training=False, log
 
     if command == 'train':
         # Get Validation dataset
-        ds_valid = get_dataset(bids_df, loader_params, valid_lst, transform_valid_params, cuda_available, device,
-                               'validation')
+        ds_valid, data_gpu_util, data_cpu_util, data_gpu_mem, data_cpu_mem = get_dataset(bids_df, loader_params,
+                                                                                         valid_lst,
+                                                                                         transform_valid_params,
+                                                                                         cuda_available, device,
+                                                                                         'validation')
+
+        # data_result = subprocess.run(
+        #     ['nvidia-smi', '--query-gpu=utilization.gpu', '--format=csv,noheader,nounits'],
+        #     stdout=subprocess.PIPE, universal_newlines=True)
+        # data_gpu_util = int(data_result.stdout) / 100
+        #
+        # data_result = subprocess.run(
+        #     ['nvidia-smi', '--query-gpu=utilization.memory', '--format=csv,noheader,nounits'],
+        #     stdout=subprocess.PIPE, universal_newlines=True)
+        # data_gpu_mem = int(data_result.stdout) / 100
+        #
+        # # TRAINING CPU UTIL STAT
+        # data_cpu_util = psutil.cpu_percent() / 100
+        #
+        # data_cpu_mem = psutil.virtual_memory().percent / 100
 
         # Get Training dataset
-        ds_train = get_dataset(bids_df, loader_params, train_lst, transform_train_params, cuda_available, device,
+        ds_train, data_gpu_util, data_cpu_util, data_gpu_mem, data_cpu_mem = get_dataset(bids_df, loader_params, train_lst, transform_train_params, cuda_available, device,
                                'training')
         metric_fns = imed_metrics.get_metric_fns(ds_train.task)
+
+        # DATA+LOADER END
+        data_end = time.time()
+        data_total = data_end - data_start
+
+        with open(slog_path, 'a') as csvfile:
+            csvwriter = csv.writer(csvfile, delimiter=',', lineterminator='\n')
+            append = ['DATA', data_total, data_gpu_util, data_gpu_mem, data_cpu_util, data_cpu_mem]
+            csvwriter.writerow(append)
+
+        start = time.time()
+
+        # TRAIN START
+        train_start = time.time()
 
         # If FiLM, normalize data
         if 'film_layers' in model_params and any(model_params['film_layers']):
@@ -446,7 +514,33 @@ def run_command(context, n_gif=0, thr_increment=None, resume_training=False, log
             n_gif=n_gif,
             resume_training=resume_training,
             debugging=context["debugging"],
-            log_path=log_path)
+            log_train_path=tlog_path,
+            log_val_path=vlog_path,
+            log_sys_path=slog_path,
+            train_start=train_start)
+
+        # train_result = subprocess.run(
+        #     ['nvidia-smi', '--query-gpu=utilization.gpu', '--format=csv,noheader,nounits'],
+        #     stdout=subprocess.PIPE, universal_newlines=True)
+        # train_gpu_util = int(train_result.stdout) / 100
+        #
+        # train_result = subprocess.run(
+        #     ['nvidia-smi', '--query-gpu=utilization.memory', '--format=csv,noheader,nounits'],
+        #     stdout=subprocess.PIPE, universal_newlines=True)
+        # train_gpu_mem = int(train_result.stdout) / 100
+        #
+        # # TRAINING CPU UTIL STAT
+        # train_cpu_util = psutil.cpu_percent() / 100
+        #
+        # train_cpu_mem = psutil.virtual_memory().percent / 100
+
+        # train_end = time.time()
+        # train_total = train_end - train_start
+
+        # with open(slog_path, 'a') as csvfile:
+        #     csvwriter = csv.writer(csvfile, delimiter=',', lineterminator='\n')
+        #     append = ['TRAIN', train_total, train_gpu_util, train_gpu_mem, train_cpu_util, train_cpu_mem]
+        #     csvwriter.writerow(append)
 
     if thr_increment:
         # LOAD DATASET
@@ -458,6 +552,33 @@ def run_command(context, n_gif=0, thr_increment=None, resume_training=False, log
         # Get Training dataset with no Data Augmentation
         ds_train = get_dataset(bids_df, loader_params, train_lst, transform_valid_params, cuda_available, device,
                                'training')
+
+        data_result = subprocess.run(
+            ['nvidia-smi', '--query-gpu=utilization.gpu', '--format=csv,noheader,nounits'],
+            stdout=subprocess.PIPE, universal_newlines=True)
+        data_gpu_util = int(data_result.stdout) / 100
+
+        data_result = subprocess.run(
+            ['nvidia-smi', '--query-gpu=utilization.memory', '--format=csv,noheader,nounits'],
+            stdout=subprocess.PIPE, universal_newlines=True)
+        data_gpu_mem = int(data_result.stdout) / 100
+
+        # TRAINING CPU UTIL STAT
+        data_cpu_util = psutil.cpu_percent() / 100
+
+        data_cpu_mem = psutil.virtual_memory().percent / 100
+
+        # DATA+LOADER END
+        data_end = time.time()
+        data_total = data_end - data_start
+
+        with open(slog_path, 'a') as csvfile:
+            csvwriter = csv.writer(csvfile, delimiter=',', lineterminator='\n')
+            append = ['DATA', data_total, data_gpu_util, data_gpu_mem, data_cpu_util, data_cpu_mem]
+            csvwriter.writerow(append)
+
+        # POST START
+        post_start = time.time()
 
         # Choice of optimisation metric
         metric = "recall_specificity" if model_params["name"] in imed_utils.CLASSIFIER_LIST else "dice"
@@ -473,9 +594,31 @@ def run_command(context, n_gif=0, thr_increment=None, resume_training=False, log
                                               fname_out=str(Path(path_output, "roc.png")),
                                               cuda_available=cuda_available)
 
+        post_result = subprocess.run(
+            ['nvidia-smi', '--query-gpu=utilization.gpu', '--format=csv,noheader,nounits'],
+            stdout=subprocess.PIPE, universal_newlines=True)
+        post_gpu_util = int(post_result.stdout) / 100
+
+        post_result = subprocess.run(
+            ['nvidia-smi', '--query-gpu=utilization.memory', '--format=csv,noheader,nounits'],
+            stdout=subprocess.PIPE, universal_newlines=True)
+        post_gpu_mem = int(post_result.stdout) / 100
+
+        post_cpu_util = psutil.cpu_percent() / 100
+
+        post_cpu_mem = psutil.virtual_memory().percent / 100
+
         # Update threshold in config file
         context["postprocessing"]["binarize_prediction"] = {"thr": thr}
         save_config_file(context, path_output)
+
+        post_end = time.time()
+        post_total = post_end - post_start
+
+        with open(slog_path, 'a') as csvfile:
+            csvwriter = csv.writer(csvfile, delimiter=',', lineterminator='\n')
+            append = ['POST', post_total, post_gpu_util, post_gpu_mem, post_cpu_util, post_cpu_mem]
+            csvwriter.writerow(append)
 
     if command == 'train':
         return best_training_dice, best_training_loss, best_validation_dice, best_validation_loss
@@ -492,10 +635,37 @@ def run_command(context, n_gif=0, thr_increment=None, resume_training=False, log
                                                                            'requires_undo': True}}, device=device,
                                            cuda_available=cuda_available)
 
+        data_result = subprocess.run(
+            ['nvidia-smi', '--query-gpu=utilization.gpu', '--format=csv,noheader,nounits'],
+            stdout=subprocess.PIPE, universal_newlines=True)
+        data_gpu_util = int(data_result.stdout) / 100
+
+        data_result = subprocess.run(
+            ['nvidia-smi', '--query-gpu=utilization.memory', '--format=csv,noheader,nounits'],
+            stdout=subprocess.PIPE, universal_newlines=True)
+        data_gpu_mem = int(data_result.stdout) / 100
+
+        # TRAINING CPU UTIL STAT
+        data_cpu_util = psutil.cpu_percent() / 100
+
+        data_cpu_mem = psutil.virtual_memory().percent / 100
+
         metric_fns = imed_metrics.get_metric_fns(ds_test.task)
 
         if 'film_layers' in model_params and any(model_params['film_layers']):
             ds_test, model_params = update_film_model_params(context, ds_test, model_params, path_output)
+
+        # DATA+LOADER END
+        data_end = time.time()
+        data_total = data_end - data_start
+
+        with open(slog_path, 'a') as csvfile:
+            csvwriter = csv.writer(csvfile, delimiter=',', lineterminator='\n')
+            append = ['DATA', data_total, data_gpu_util, data_gpu_mem, data_cpu_util, data_cpu_mem]
+            csvwriter.writerow(append)
+
+        # TEST
+        test_start = time.time()
 
         # RUN INFERENCE
         pred_metrics = imed_testing.test(model_params=model_params,
@@ -511,6 +681,32 @@ def run_command(context, n_gif=0, thr_increment=None, resume_training=False, log
         df_results = imed_evaluation.evaluate(bids_df, path_output=path_output,
                                               target_suffix=loader_params["target_suffix"],
                                               eval_params=context["evaluation_parameters"])
+
+        test_result = subprocess.run(
+            ['nvidia-smi', '--query-gpu=utilization.gpu', '--format=csv,noheader,nounits'],
+            stdout=subprocess.PIPE, universal_newlines=True)
+        test_gpu_util = int(test_result.stdout) / 100
+
+        test_result = subprocess.run(
+            ['nvidia-smi', '--query-gpu=utilization.memory', '--format=csv,noheader,nounits'],
+            stdout=subprocess.PIPE, universal_newlines=True)
+        test_gpu_mem = int(test_result.stdout) / 100
+
+        # TRAINING CPU UTIL STAT
+        test_cpu_util = psutil.cpu_percent() / 100
+
+        test_cpu_mem = psutil.virtual_memory().percent / 100
+
+        metric_fns = imed_metrics.get_metric_fns(ds_test.task)
+
+        test_end = time.time()
+        test_total = test_end - test_start
+
+        with open(slog_path, 'a') as csvfile:
+            csvwriter = csv.writer(csvfile, delimiter=',', lineterminator='\n')
+            append = ['TEST', test_total, test_gpu_util, test_gpu_mem, test_cpu_util, test_cpu_mem]
+            csvwriter.writerow(append)
+
         return df_results, pred_metrics
 
 
@@ -596,8 +792,14 @@ def run_main():
     context["loader_parameters"]["path_data"] = imed_utils.get_path_data(args, context)
     t.end()
 
-    log_path = args.log
-    print('LOG PATH IS: ', log_path)
+    tlog_path = args.tlog
+    print('TRAIN LOG PATH IS: ', tlog_path)
+
+    vlog_path = args.vlog
+    print('VAL LOG PATH IS: ', vlog_path)
+
+    slog_path = args.slog
+    print('SYS LOG PATH IS: ', slog_path)
 
     t = Timer('RUN-COMMAND')
     t.start()
@@ -606,7 +808,9 @@ def run_main():
                 n_gif=args.gif if args.gif is not None else 0,
                 thr_increment=args.thr_increment if args.thr_increment else None,
                 resume_training=bool(args.resume_training),
-                log_path=log_path)
+                tlog_path=tlog_path,
+                vlog_path=vlog_path,
+                slog_path=slog_path)
     t.end()
 
 
