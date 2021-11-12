@@ -782,15 +782,14 @@ def run_main():
     args = parser.parse_args()
 
     # Get context from configuration file
-    t = Timer('PARSE-CONFIG-FILE')
-    t.start()
+
     path_config_file = args.config
     context = imed_config_manager.ConfigurationManager(path_config_file).get_config()
 
     context["command"] = imed_utils.get_command(args, context)
     context["path_output"] = imed_utils.get_path_output(args, context)
     context["loader_parameters"]["path_data"] = imed_utils.get_path_data(args, context)
-    t.end()
+
 
     tlog_path = args.tlog
     print('TRAIN LOG PATH IS: ', tlog_path)
@@ -801,8 +800,7 @@ def run_main():
     slog_path = args.slog
     print('SYS LOG PATH IS: ', slog_path)
 
-    t = Timer('RUN-COMMAND')
-    t.start()
+
     # Run command
     run_command(context=context,
                 n_gif=args.gif if args.gif is not None else 0,
@@ -811,7 +809,7 @@ def run_main():
                 tlog_path=tlog_path,
                 vlog_path=vlog_path,
                 slog_path=slog_path)
-    t.end()
+
 
 
 if __name__ == "__main__":
