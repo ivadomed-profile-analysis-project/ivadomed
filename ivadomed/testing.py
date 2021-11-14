@@ -26,7 +26,6 @@ cudnn.benchmark = True
 def test(model_params, dataset_test, testing_params, path_output, device, cuda_available=True,
          metric_fns=None, postprocessing=None):
     """Main command to test the network.
-
     Args:
         model_params (dict): Model's parameters.
         dataset_test (imed_loader): Testing dataset.
@@ -36,7 +35,6 @@ def test(model_params, dataset_test, testing_params, path_output, device, cuda_a
         cuda_available (bool): If True, CUDA is available.
         metric_fns (list): List of metrics, see :mod:`ivadomed.metrics`.
         postprocessing (dict): Contains postprocessing steps.
-
     Returns:
         dict: result metrics.
     """
@@ -91,7 +89,6 @@ def test(model_params, dataset_test, testing_params, path_output, device, cuda_a
 def run_inference(test_loader, model, model_params, testing_params, ofolder, cuda_available,
                   i_monte_carlo=None, postprocessing=None):
     """Run inference on the test data and save results as nibabel files.
-
     Args:
         test_loader (torch DataLoader):
         model (nn.Module):
@@ -101,7 +98,6 @@ def run_inference(test_loader, model, model_params, testing_params, ofolder, cud
         cuda_available (bool): If True, CUDA is available.
         i_monte_carlo (int): i_th Monte Carlo iteration.
         postprocessing (dict): Indicates postprocessing steps.
-
     Returns:
         ndarray, ndarray: Prediction, Ground-truth of shape n_sample, n_label, h, w, d.
     """
@@ -218,7 +214,7 @@ def run_inference(test_loader, model, model_params, testing_params, ofolder, cud
 
                 # NEW COMPLETE VOLUME
                 if (pred_tmp_lst and ((last_patch_bool and last_slice_bool) or last_sample_bool)
-                    and task != "classification"):
+                        and task != "classification"):
                     # save the completely processed file as a NifTI file
                     if ofolder:
                         fname_pred = str(Path(ofolder, Path(fname_ref).name))
@@ -230,13 +226,13 @@ def run_inference(test_loader, model, model_params, testing_params, ofolder, cud
                     else:
                         fname_pred = None
                     output_nii = imed_inference.pred_to_nib(data_lst=pred_tmp_lst,
-                                                        z_lst=z_tmp_lst,
-                                                        fname_ref=fname_ref,
-                                                        fname_out=fname_pred,
-                                                        slice_axis=slice_axis,
-                                                        kernel_dim='2d',
-                                                        bin_thr=-1,
-                                                        postprocessing=postprocessing)
+                                                            z_lst=z_tmp_lst,
+                                                            fname_ref=fname_ref,
+                                                            fname_out=fname_pred,
+                                                            slice_axis=slice_axis,
+                                                            kernel_dim='2d',
+                                                            bin_thr=-1,
+                                                            postprocessing=postprocessing)
                     output_data = output_nii.get_fdata().transpose(3, 0, 1, 2)
                     preds_npy_list.append(output_data)
 
@@ -269,9 +265,9 @@ def run_inference(test_loader, model, model_params, testing_params, ofolder, cud
             else:
                 pred_undo, metadata, last_sample_bool, volume, weight_matrix = \
                     imed_inference.volume_reconstruction(batch,
-                                                     preds_cpu,
-                                                     testing_params['undo_transforms'],
-                                                     smp_idx, volume, weight_matrix)
+                                                         preds_cpu,
+                                                         testing_params['undo_transforms'],
+                                                         smp_idx, volume, weight_matrix)
                 # Indicator of last batch
                 if last_sample_bool:
                     pred_undo = np.array(pred_undo)
@@ -287,13 +283,13 @@ def run_inference(test_loader, model, model_params, testing_params, ofolder, cud
                         fname_pred = None
                     # Choose only one modality
                     output_nii = imed_inference.pred_to_nib(data_lst=[pred_undo],
-                                                        z_lst=[],
-                                                        fname_ref=fname_ref,
-                                                        fname_out=fname_pred,
-                                                        slice_axis=slice_axis,
-                                                        kernel_dim='3d',
-                                                        bin_thr=-1,
-                                                        postprocessing=postprocessing)
+                                                            z_lst=[],
+                                                            fname_ref=fname_ref,
+                                                            fname_out=fname_pred,
+                                                            slice_axis=slice_axis,
+                                                            kernel_dim='3d',
+                                                            bin_thr=-1,
+                                                            postprocessing=postprocessing)
                     output_data = output_nii.get_fdata().transpose(3, 0, 1, 2)
                     preds_npy_list.append(output_data)
 
@@ -320,7 +316,6 @@ def run_inference(test_loader, model, model_params, testing_params, ofolder, cud
 def threshold_analysis(model_path, ds_lst, model_params, testing_params, metric="dice", increment=0.1,
                        fname_out="thr.png", cuda_available=True):
     """Run a threshold analysis to find the optimal threshold on a sub-dataset.
-
     Args:
         model_path (str): Model path.
         ds_lst (list): List of loaders.
@@ -331,7 +326,6 @@ def threshold_analysis(model_path, ds_lst, model_params, testing_params, metric=
         increment (float): Increment between tested thresholds.
         fname_out (str): Plot output filename.
         cuda_available (bool): If True, CUDA is available.
-
     Returns:
         float: optimal threshold.
     """
@@ -411,7 +405,7 @@ def threshold_analysis(model_path, ds_lst, model_params, testing_params, metric=
 
 def get_gt(filenames):
     """Get ground truth data as numpy array.
-    
+
     Args:
         filenames (list): List of ground truth filenames, one per class.
     Returns:

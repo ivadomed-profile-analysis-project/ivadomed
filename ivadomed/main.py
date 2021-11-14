@@ -543,6 +543,10 @@ def run_command(context, n_gif=0, thr_increment=None, resume_training=False, tlo
         #     csvwriter.writerow(append)
 
     if thr_increment:
+        # POST START
+        post_start = time.time()
+
+
         # LOAD DATASET
         if command != 'train':  # If command == train, then ds_valid already load
             # Get Validation dataset
@@ -553,32 +557,31 @@ def run_command(context, n_gif=0, thr_increment=None, resume_training=False, tlo
         ds_train = get_dataset(bids_df, loader_params, train_lst, transform_valid_params, cuda_available, device,
                                'training')
 
-        data_result = subprocess.run(
-            ['nvidia-smi', '--query-gpu=utilization.gpu', '--format=csv,noheader,nounits'],
-            stdout=subprocess.PIPE, universal_newlines=True)
-        data_gpu_util = int(data_result.stdout) / 100
+        # data_result = subprocess.run(
+        #     ['nvidia-smi', '--query-gpu=utilization.gpu', '--format=csv,noheader,nounits'],
+        #     stdout=subprocess.PIPE, universal_newlines=True)
+        # data_gpu_util = int(data_result.stdout) / 100
+        #
+        # data_result = subprocess.run(
+        #     ['nvidia-smi', '--query-gpu=utilization.memory', '--format=csv,noheader,nounits'],
+        #     stdout=subprocess.PIPE, universal_newlines=True)
+        # data_gpu_mem = int(data_result.stdout) / 100
+        #
+        # # TRAINING CPU UTIL STAT
+        # data_cpu_util = psutil.cpu_percent() / 100
+        #
+        # data_cpu_mem = psutil.virtual_memory().percent / 100
+        #
+        # # DATA+LOADER END
+        # data_end = time.time()
+        # data_total = data_end - data_start
+        #
+        # with open(slog_path, 'a') as csvfile:
+        #     csvwriter = csv.writer(csvfile, delimiter=',', lineterminator='\n')
+        #     append = ['DATA', data_total, data_gpu_util, data_gpu_mem, data_cpu_util, data_cpu_mem]
+        #     csvwriter.writerow(append)
 
-        data_result = subprocess.run(
-            ['nvidia-smi', '--query-gpu=utilization.memory', '--format=csv,noheader,nounits'],
-            stdout=subprocess.PIPE, universal_newlines=True)
-        data_gpu_mem = int(data_result.stdout) / 100
 
-        # TRAINING CPU UTIL STAT
-        data_cpu_util = psutil.cpu_percent() / 100
-
-        data_cpu_mem = psutil.virtual_memory().percent / 100
-
-        # DATA+LOADER END
-        data_end = time.time()
-        data_total = data_end - data_start
-
-        with open(slog_path, 'a') as csvfile:
-            csvwriter = csv.writer(csvfile, delimiter=',', lineterminator='\n')
-            append = ['DATA', data_total, data_gpu_util, data_gpu_mem, data_cpu_util, data_cpu_mem]
-            csvwriter.writerow(append)
-
-        # POST START
-        post_start = time.time()
 
         # Choice of optimisation metric
         metric = "recall_specificity" if model_params["name"] in imed_utils.CLASSIFIER_LIST else "dice"

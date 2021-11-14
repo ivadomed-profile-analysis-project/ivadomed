@@ -17,8 +17,8 @@ def multbarplot(X, data, label, width, err, ylabel, title, filename, curr_subplo
         curr_data = data[i]
         curr_label = label[i]
         curr_err = err[i]
-        plt.bar(X_axis - width / 2 + (i * width / n), curr_data, width / n, label=curr_label, align='edge',
-                yerr=curr_err)
+        plt.bar(X_axis - width / 2 + (i * width / n), curr_data, width / n, label=curr_label, align='edge')
+                #yerr=curr_err)
 
     plt.xticks(X_axis, X)
     plt.ylabel(ylabel)
@@ -29,14 +29,9 @@ def multbarplot(X, data, label, width, err, ylabel, title, filename, curr_subplo
 def stackedbarplot(X, data, label, width, ylabel, title, filename):
     X_axis = np.arange(len(X))
     n = len(data)
-    fig, ax = plt.subplots(figsize=(15,8))
-    # bot = [x + y for x, y in zip(data[0], data[1])]
-    #
-    # plt.bar(X_axis, data[0], width / n, label=label[0], bottom=[0])
-    # plt.bar(X_axis, data[1], width / n, label=label[1], bottom=data[0])
-    # plt.bar(X_axis, data[2], width / n, label=label[2], bottom=bot)
+    fig, ax = plt.subplots(figsize=(15, 8))
 
-    bot = [0, 0, 0, 0, 0]
+    bot = [0 for i in range(len(X))]
     for i in range(n):
         curr_data = data[i]
         curr_label = label[i]
@@ -46,10 +41,11 @@ def stackedbarplot(X, data, label, width, ylabel, title, filename):
     for bar in ax.patches:
         ax.text(
             bar.get_x() + bar.get_width() / 2,
-            bar.get_height() / 2 + bar.get_y(),
+            bar.get_height() / 2 + bar.get_y() - 3,
             round(bar.get_height(), 3),
             ha='center',
-            weight='bold'
+            weight='bold',
+            color='w'
         )
 
     plt.xticks(X_axis, X)
@@ -57,28 +53,58 @@ def stackedbarplot(X, data, label, width, ylabel, title, filename):
     plt.title(title)
     plt.legend()
     plt.savefig(filename)
-    plt.show()
+    # plt.show()
+
+
+def trainsubplot(mod1trn, mod2trn, mod3trn, label, ylabel, title, curr_subplot):
+    plt.subplot(2, 3, curr_subplot)
+    len_norm = mod1trn.shape[0]
+    len_3d = mod3trn.shape[0]
+
+    plt.plot(range(len_norm), mod1trn, label=label[0])
+    plt.plot(range(len_norm), mod2trn, label=label[1])
+    plt.plot(range(len_3d), mod3trn, label=label[2])
+
+    plt.xlabel('Mini-batch')
+    plt.ylabel(ylabel)
+    plt.title(title)
+    plt.legend()
 
 
 def main():
     numexp = 3
-    direxp = 'C:/Users/harsh/ivadomed/experiments/'
+    direxp = 'C:/Users/harsh/ivadomed/experiments/thr/'
     dirpath = [
-        direxp + 'unet/',
-        direxp + 'resnet/',
-        direxp + 'densenet/',
-        direxp + 'filmedunet/',
-        # direxp + 'hemisunet/',
-        direxp + '3dunet/']
+        direxp + 'unet_0.1/',
+        direxp + 'unet_0.01/',
+        direxp + 'unet_0.001/'
+    ]
 
-    dirsave = 'C:/Users/harsh/ivadomed/experiments/final/'
+    dirsave = 'C:/Users/harsh/ivadomed/experiments/final/thr/'
     savepath = [
-        dirsave + 'unet/',
-        dirsave + 'resnet/',
-        dirsave + 'densenet/',
-        dirsave + 'filmedunet/',
-        # dirsave + 'hemisunet/',
-        dirsave + '3dunet/'
+        dirsave + 'unet_0.1/',
+        dirsave + 'unet_0.01/',
+        dirsave + 'unet_0.001/'
+    ]
+
+    plotdir = 'C:/Users/harsh/ivadomed/experiments/plots/thr/'
+
+    modelnames = [
+        'unet_0.1',
+        'unet_0.01',
+        'unet_0.001'
+    ]
+    config_path = 'C:/Users/harsh/ivadomed/ivadomed/config/thr/'
+    config_files = [
+        config_path + 'unet_thr_1.json',
+        config_path + 'unet_thr_01.json',
+        config_path + 'unet_thr_001.json',
+    ]
+
+    thr = [
+        0.1,
+        0.01,
+        0.001
     ]
 
     for dir in dirpath:
@@ -89,21 +115,13 @@ def main():
         if not os.path.exists(dir):
             os.makedirs(dir)
 
-    modelnames = [
-        'unet',
-        'resnet',
-        'densenet',
-        'filmedunet',
-        # 'hemisunet',
-        '3dunet'
-    ]
-    config_files = [
-        'unet.json',
-        'resnet.json',
-        'densenet.json',
-        'filmedunet.json',
-        # 'hemisunet.json',
-        '3dunet.json']
+    if not os.path.exists(plotdir):
+        os.makedirs(plotdir)
+
+    if not os.path.exists(config_path):
+        os.makedirs(config_path)
+
+
 
     time_data = []
     time_train = []
@@ -139,7 +157,8 @@ def main():
 
         command = []
         for i in range(numexp):
-            com = ['ivadomed', '-c', curr_config, '--tlog', tlog[i], '--vlog', vlog[i], '--slog', slog[i]]
+            com = f'ivadomed -c {curr_config} -t {thr[path_num]} -g 1 --tlog {tlog[i]} --vlog {vlog[i]} --slog {slog[i]}'
+            #com = ['ivadomed', '-c', curr_config, '-t', 0.1, '-g', '1', '--tlog', tlog[i], '--vlog', vlog[i], '--slog', slog[i]]
             command.append(com)
 
         for i in range(numexp):
@@ -214,7 +233,7 @@ def main():
             sys = sys.append({'comp': comp, 'time': time_sum, 'gpu_util': gpu_util_sum, 'cpu_util': cpu_util_sum,
                               'gpu_mem': gpu_mem_sum, 'main_mem': main_mem_sum}, ignore_index=True)
 
-        #time_mean.append(curr_exp_time_mean)
+        # time_mean.append(curr_exp_time_mean)
 
         gpu_util_mean.append(curr_exp_gpu_util_mean)
         gpu_util_err.append(curr_exp_gpu_util_err)
@@ -270,11 +289,13 @@ def main():
         trn.to_csv(final_path + curr_model + '_trn.csv', encoding='utf-8', index=False)
         val.to_csv(final_path + curr_model + '_val.csv', encoding='utf-8', index=False)
 
+    # SYSTEM SUBPLOT
+
     X = ['Data', 'Train', 'Post']
-    label = ['UNet', 'ResNet', 'DenseNet', 'FiLMed-UNet', '3D-UNet']
+    label = ['UNet, inc=0.1', 'UNet, inc=0.01', 'UNet, inc=0.001']
     width = 0.75
 
-    fig, ax = plt.subplots(figsize=(20,20))
+    fig, ax = plt.subplots(figsize=(20, 15))
     fig.tight_layout(pad=5)
 
     filename = 'gpu_util_plot.png'
@@ -301,16 +322,89 @@ def main():
     multbarplot(X=X, data=cpu_mem_mean, label=label, width=width, err=cpu_mem_err, filename=filename, ylabel=ylabel,
                 title=title, curr_subplot=4)
 
-    plt.savefig('subplot.png')
-    plt.show()
+    plt.savefig(plotdir + 'subplot.png')
+    # plt.show()
 
-    X = ['UNet', 'ResNet', 'DenseNet', 'FiLMed-UNet', '3D-UNet']
+    # SYSTEM TIME PLOT
+
+    X = ['UNet, inc=0.1', 'UNet, inc=0.01', 'UNet, inc=0.001']
     time_mean = [time_data, time_train, time_post]
     label = ['Data', 'Train', 'Post']
-    filename = 'time_per_comp_plot.png'
+    filename = plotdir + 'time_per_comp_plot.png'
     ylabel = 'Time (seconds)'
     title = 'Time per Pipeline Component Across Architectures'
-    stackedbarplot(X=X, data=time_mean, label=label, width=1, ylabel=ylabel, title=title, filename=filename)
+    stackedbarplot(X=X, data=time_mean, label=label, width=2, ylabel=ylabel, title=title, filename=filename)
+
+    # TRAINING SUBPLOT
+    final_path = 'C:/Users/harsh/ivadomed/experiments/final/thr/'
+
+    unet1_trn = pd.read_csv(final_path + 'unet_0.1/' + 'unet_0.1_trn.csv')
+    unet01_trn = pd.read_csv(final_path + 'unet_0.01/' + 'unet_0.01_trn.csv')
+    unet001_trn = pd.read_csv(final_path + 'unet_0.001/' + 'unet_0.001_trn.csv')
+
+    fig, ax = plt.subplots(2,3, figsize=(20, 15))
+    label = ['UNet, inc=0.1', 'UNet, inc=0.01', 'UNet, inc=0.001']
+
+    ylabel = 'GPU Utilization (%)'
+    title = 'Training GPU Utilization Per Mini-Batch Across Architectures'
+    trainsubplot(unet1_trn.iloc[:, 1], unet01_trn.iloc[:, 1], unet001_trn.iloc[:, 1], label, ylabel, title, 1)
+
+    ylabel = 'CPU Utilization (%)'
+    title = 'Training CPU Utilization Per Mini-Batch Across Architectures'
+    trainsubplot(unet1_trn.iloc[:, 2], unet01_trn.iloc[:, 2], unet001_trn.iloc[:, 2], label, ylabel, title, 2)
+
+    ylabel = 'GPU Memory Utilization (%)'
+    title = 'Training GPU Memory Utilization Per Mini-Batch Across Architectures'
+    trainsubplot(unet1_trn.iloc[:, 3], unet01_trn.iloc[:, 3], unet001_trn.iloc[:, 3], label, ylabel, title, 3)
+
+    ylabel = 'CPU Memory Utilization (%)'
+    title = 'Training CPU Memory Utilization Per Mini-Batch Across Architectures'
+    trainsubplot(unet1_trn.iloc[:, 4], unet01_trn.iloc[:, 4], unet001_trn.iloc[:, 4], label, ylabel, title, 4)
+
+    ylabel = 'Time (s)'
+    title = 'Training Time Per Mini-Batch Across Architectures'
+    trainsubplot(unet1_trn.iloc[:, 0], unet01_trn.iloc[:, 0], unet001_trn.iloc[:, 0], label, ylabel, title, 5)
+
+    ax[1][2].set_visible(False)
+    ax[1][0].set_position([0.24, 0.125, 0.228, 0.343])
+    ax[1][1].set_position([0.55, 0.125, 0.228, 0.343])
+
+    plt.savefig(plotdir + 'training_subplot.png')
+
+    # VALIDATION SUBPLOT
+
+    unet1_val = pd.read_csv(final_path + 'unet_0.1/' + 'unet_0.1_val.csv')
+    unet01_val = pd.read_csv(final_path + 'unet_0.01/' + 'unet_0.01_val.csv')
+    unet001_val = pd.read_csv(final_path + 'unet_0.001/' + 'unet_0.001_val.csv')
+
+    fig, ax = plt.subplots(2,3, figsize=(20, 15))
+    label = ['UNet', 'FiLMed-UNet', '3D-UNet']
+
+    ylabel = 'GPU Utilization (%)'
+    title = 'Validation GPU Utilization Per Mini-Batch Across Architectures'
+    trainsubplot(unet1_val.iloc[:, 1], unet01_val.iloc[:, 1], unet001_val.iloc[:, 1], label, ylabel, title, 1)
+
+    ylabel = 'CPU Utilization (%)'
+    title = 'Validation CPU Utilization Per Mini-Batch Across Architectures'
+    trainsubplot(unet1_val.iloc[:, 2], unet01_val.iloc[:, 2], unet001_val.iloc[:, 2], label, ylabel, title, 2)
+
+    ylabel = 'GPU Memory Utilization (%)'
+    title = 'Validation GPU Memory Utilization Per Mini-Batch Across Architectures'
+    trainsubplot(unet1_val.iloc[:, 3], unet01_val.iloc[:, 3], unet001_val.iloc[:, 3], label, ylabel, title, 3)
+
+    ylabel = 'CPU Memory Utilization (%)'
+    title = 'Validation CPU Memory Utilization Per Mini-Batch Across Architectures'
+    trainsubplot(unet1_val.iloc[:, 4], unet01_val.iloc[:, 4], unet001_val.iloc[:, 4], label, ylabel, title, 4)
+
+    ylabel = 'Time (s)'
+    title = 'Validation Time Per Mini-Batch Across Architectures'
+    trainsubplot(unet1_val.iloc[:, 0], unet01_val.iloc[:, 0], unet001_val.iloc[:, 0], label, ylabel, title, 5)
+
+    ax[1][2].set_visible(False)
+    ax[1][0].set_position([0.24, 0.125, 0.228, 0.343])
+    ax[1][1].set_position([0.55, 0.125, 0.228, 0.343])
+
+    plt.savefig(plotdir + 'validation_subplot.png')
 
 
 if __name__ == "__main__":

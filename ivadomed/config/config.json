@@ -45,7 +45,7 @@
             "name": "DiceLoss"
         },
         "training_time": {
-            "num_epochs": 5,
+            "num_epochs": 1,
             "early_stopping_patience": 50,
             "early_stopping_epsilon": 0.001
         },
@@ -107,8 +107,8 @@
     "transformation": {
         "Resample":
         {
-            "wspace": 0.75,
             "hspace": 0.75,
+            "wspace": 0.75,
             "dspace": 1
         },
         "CenterCrop": {
