@@ -73,7 +73,9 @@ def trainsubplot(mod1trn, mod2trn, mod3trn, label, ylabel, title, curr_subplot):
 
 def main():
     numexp = 3
-    direxp = 'C:/Users/harsh/ivadomed/experiments/seg_1xdata/'
+    path = 'C:/Users/harsh/ivadomed/'
+
+    direxp = path + 'experiments/seg_1xdata/'
     dirpath = [
         direxp + 'unet/',
         # direxp + 'resnet/',
@@ -82,7 +84,7 @@ def main():
         # direxp + 'hemisunet/',
         direxp + '3dunet/']
 
-    dirsave = 'C:/Users/harsh/ivadomed/experiments/final/seg_1xdata/'
+    dirsave = path + 'experiments/final/seg_1xdata/'
     savepath = [
         dirsave + 'unet/',
         # dirsave + 'resnet/',
@@ -92,7 +94,7 @@ def main():
         dirsave + '3dunet/'
     ]
 
-    plotdir = 'C:/Users/harsh/ivadomed/experiments/plots/seg_1xdata/'
+    plotdir = path + 'experiments/plots/seg_1xdata/'
 
     modelnames = [
         'unet',
@@ -102,7 +104,7 @@ def main():
         # 'hemisunet',
         '3dunet'
     ]
-    config_path = 'C:/Users/harsh/ivadomed/ivadomed/config/seg_1xdata/'
+    config_path = path + 'ivadomed/config/seg_1xdata/'
     config_files = [
         config_path + 'unet_1xdata.json',
         # 'resnet.json',
@@ -144,6 +146,7 @@ def main():
     cpu_mem_err = []
 
     for path_num in range(len(dirpath)):
+
         currdir = dirpath[path_num]
         final_path = savepath[path_num]
         curr_model = modelnames[path_num]
@@ -177,8 +180,8 @@ def main():
             valdf.append(pd.DataFrame(pd.read_csv(vlog[i])))
 
         sys = pd.DataFrame(columns=['comp', 'time', 'gpu_util', 'cpu_util', 'gpu_mem', 'main_mem'])
-        trn = pd.DataFrame(columns=['time', 'train_gpu_util', 'train_cpu_util', 'train_gpu_mem', 'train_main_mem'])
-        val = pd.DataFrame(columns=['time', 'val_gpu_util', 'val_cpu_util', 'val_gpu_mem', 'val_main_mem'])
+        trn = pd.DataFrame(columns=['time', 'train_gpu_util', 'train_cpu_util', 'train_gpu_mem', 'train_main_mem', 'train_loss'])
+        val = pd.DataFrame(columns=['time', 'val_gpu_util', 'val_cpu_util', 'val_gpu_mem', 'val_main_mem', 'val_loss'])
 
         time_row = [df.iloc[0, 1] for df in sysdf]
         time_data.append(np.mean(time_row))
@@ -251,7 +254,7 @@ def main():
         cpu_mem_err.append(curr_exp_cpu_mem_err)
 
         for i in range(trndf[0].shape[0]):
-            time_sum = gpu_util_sum = cpu_util_sum = gpu_mem_sum = main_mem_sum = 0
+            time_sum = gpu_util_sum = cpu_util_sum = gpu_mem_sum = main_mem_sum = loss_sum = 0
 
             for j in range(numexp):
                 time_sum += trndf[j].iloc[i, 0]
@@ -259,18 +262,20 @@ def main():
                 cpu_util_sum += trndf[j].iloc[i, 2]
                 gpu_mem_sum += trndf[j].iloc[i, 3]
                 main_mem_sum += trndf[j].iloc[i, 4]
+                loss_sum += trndf[j].iloc[i, 5]
 
             time_sum /= numexp
             gpu_util_sum /= numexp
             cpu_util_sum /= numexp
             gpu_mem_sum /= numexp
             main_mem_sum /= numexp
+            loss_sum /= numexp
 
             trn = trn.append({'time': time_sum, 'train_gpu_util': gpu_util_sum, 'train_cpu_util': cpu_util_sum,
-                              'train_gpu_mem': gpu_mem_sum, 'train_main_mem': main_mem_sum}, ignore_index=True)
+                              'train_gpu_mem': gpu_mem_sum, 'train_main_mem': main_mem_sum, 'train_loss': loss_sum}, ignore_index=True)
 
         for i in range(valdf[0].shape[0]):
-            time_sum = gpu_util_sum = cpu_util_sum = gpu_mem_sum = main_mem_sum = 0
+            time_sum = gpu_util_sum = cpu_util_sum = gpu_mem_sum = main_mem_sum = loss_sum = 0
 
             for j in range(numexp):
                 time_sum += valdf[j].iloc[i, 0]
@@ -278,15 +283,17 @@ def main():
                 cpu_util_sum += valdf[j].iloc[i, 2]
                 gpu_mem_sum += valdf[j].iloc[i, 3]
                 main_mem_sum += valdf[j].iloc[i, 4]
+                loss_sum += valdf[j].iloc[i, 5]
 
             time_sum /= numexp
             gpu_util_sum /= numexp
             cpu_util_sum /= numexp
             gpu_mem_sum /= numexp
             main_mem_sum /= numexp
+            loss_sum /= numexp
 
             val = val.append({'time': time_sum, 'val_gpu_util': gpu_util_sum, 'val_cpu_util': cpu_util_sum,
-                              'val_gpu_mem': gpu_mem_sum, 'val_main_mem': main_mem_sum}, ignore_index=True)
+                              'val_gpu_mem': gpu_mem_sum, 'val_main_mem': main_mem_sum, 'val_loss': loss_sum}, ignore_index=True)
 
         sys.to_csv(final_path + curr_model + '_sys.csv', encoding='utf-8', index=False)
         trn.to_csv(final_path + curr_model + '_trn.csv', encoding='utf-8', index=False)
@@ -339,7 +346,7 @@ def main():
     stackedbarplot(X=X, data=time_mean, label=label, width=2, ylabel=ylabel, title=title, filename=filename)
 
     # TRAINING SUBPLOT
-    final_path = 'C:/Users/harsh/ivadomed/experiments/final/seg_1xdata/'
+    final_path = path + 'experiments/final/seg_1xdata/'
 
     unet_trn = pd.read_csv(final_path + 'unet/' + 'unet_trn.csv')
     filmedunet_trn = pd.read_csv(final_path + 'filmedunet/' + 'filmedunet_trn.csv')
@@ -368,9 +375,13 @@ def main():
     title = 'Training Time Per Mini-Batch Across Architectures'
     trainsubplot(unet_trn.iloc[:, 0], filmedunet_trn.iloc[:, 0], _3dunet_trn.iloc[:, 0], label, ylabel, title, 5)
 
-    ax[1][2].set_visible(False)
-    ax[1][0].set_position([0.24, 0.125, 0.228, 0.343])
-    ax[1][1].set_position([0.55, 0.125, 0.228, 0.343])
+    ylabel = 'Dice Loss'
+    title = 'Dice Loss Per Mini-Batch Across Architectures'
+    trainsubplot(unet_trn.iloc[:, 5], filmedunet_trn.iloc[:, 5], _3dunet_trn.iloc[:, 5], label, ylabel, title, 6)
+
+    # ax[1][2].set_visible(False)
+    # ax[1][0].set_position([0.24, 0.125, 0.228, 0.343])
+    # ax[1][1].set_position([0.55, 0.125, 0.228, 0.343])
 
     plt.savefig(plotdir + 'training_subplot.png')
 
@@ -403,9 +414,14 @@ def main():
     title = 'Validation Time Per Mini-Batch Across Architectures'
     trainsubplot(unet_val.iloc[:, 0], filmedunet_val.iloc[:, 0], _3dunet_val.iloc[:, 0], label, ylabel, title, 5)
 
-    ax[1][2].set_visible(False)
-    ax[1][0].set_position([0.24, 0.125, 0.228, 0.343])
-    ax[1][1].set_position([0.55, 0.125, 0.228, 0.343])
+    ylabel = 'Dice Loss'
+    title = 'Dice Loss Per Mini-Batch Across Architectures'
+    trainsubplot(unet_val.iloc[:, 5], filmedunet_val.iloc[:, 5], _3dunet_val.iloc[:, 5], label, ylabel, title, 6)
+
+
+    # ax[1][2].set_visible(False)
+    # ax[1][0].set_position([0.24, 0.125, 0.228, 0.343])
+    # ax[1][1].set_position([0.55, 0.125, 0.228, 0.343])
 
     plt.savefig(plotdir + 'validation_subplot.png')
 

@@ -96,6 +96,8 @@ def get_parser():
     optional_args.add_argument('-h', '--help', action='help', default=argparse.SUPPRESS,
                                help='Shows function documentation.')
 
+    #################################################################################################
+
     # Per-mini batch log path.
     parser.add_argument("--tlog", dest='tlog', required=True, type=str,
                         help="Path to train log file.")
@@ -106,6 +108,8 @@ def get_parser():
     # System log path.
     parser.add_argument("--slog", dest='slog', required=True, type=str,
                         help="Path to system log file.")
+
+    #################################################################################################
 
     return parser
 
@@ -158,6 +162,8 @@ def get_dataset(bids_df, loader_params, data_lst, transform_params, cuda_availab
                                                                   'dataset_type': ds_type}}, device=device,
                                   cuda_available=cuda_available)
 
+    #################################################################################################
+
     data_result = subprocess.run(
         ['nvidia-smi', '--query-gpu=utilization.gpu', '--format=csv,noheader,nounits'],
         stdout=subprocess.PIPE, universal_newlines=True)
@@ -172,6 +178,8 @@ def get_dataset(bids_df, loader_params, data_lst, transform_params, cuda_availab
     data_cpu_util = psutil.cpu_percent() / 100
 
     data_cpu_mem = psutil.virtual_memory().percent / 100
+
+    #################################################################################################
 
     return ds, data_gpu_util, data_cpu_util, data_gpu_mem, data_cpu_mem
 
@@ -373,6 +381,7 @@ def run_command(context, n_gif=0, thr_increment=None, resume_training=False, tlo
             * If "segment" command: No return value.
 
     """
+    #################################################################################################
 
     # DATASET+LOADER START
     data_start = time.time()
@@ -382,6 +391,8 @@ def run_command(context, n_gif=0, thr_increment=None, resume_training=False, tlo
         fieldnames = ['comp', 'time', 'gpu_util', 'cpu_util', 'gpu_mem', 'main_mem']
         csvwriter = csv.DictWriter(csvfile, fieldnames=fieldnames)
         csvwriter.writeheader()
+
+    #################################################################################################
 
     command = copy.deepcopy(context.get("command"))
     path_output = set_output_path(context)
@@ -448,6 +459,7 @@ def run_command(context, n_gif=0, thr_increment=None, resume_training=False, tlo
     check_multiple_raters(command == "train", loader_params)
 
     if command == 'train':
+        #################################################################################################
         # Get Validation dataset
         ds_valid, data_gpu_util, data_cpu_util, data_gpu_mem, data_cpu_mem = get_dataset(bids_df, loader_params,
                                                                                          valid_lst,
@@ -473,6 +485,10 @@ def run_command(context, n_gif=0, thr_increment=None, resume_training=False, tlo
         # Get Training dataset
         ds_train, data_gpu_util, data_cpu_util, data_gpu_mem, data_cpu_mem = get_dataset(bids_df, loader_params, train_lst, transform_train_params, cuda_available, device,
                                'training')
+
+        #################################################################################################
+
+
         metric_fns = imed_metrics.get_metric_fns(ds_train.task)
 
         # DATA+LOADER END
@@ -550,11 +566,11 @@ def run_command(context, n_gif=0, thr_increment=None, resume_training=False, tlo
         # LOAD DATASET
         if command != 'train':  # If command == train, then ds_valid already load
             # Get Validation dataset
-            ds_valid = get_dataset(bids_df, loader_params, valid_lst, transform_valid_params, cuda_available, device,
+            ds_valid, data_gpu_util, data_cpu_util, data_gpu_mem, data_cpu_mem = get_dataset(bids_df, loader_params, valid_lst, transform_valid_params, cuda_available, device,
                                    'validation')
 
         # Get Training dataset with no Data Augmentation
-        ds_train = get_dataset(bids_df, loader_params, train_lst, transform_valid_params, cuda_available, device,
+        ds_train, data_gpu_util, data_cpu_util, data_gpu_mem, data_cpu_mem = get_dataset(bids_df, loader_params, train_lst, transform_valid_params, cuda_available, device,
                                'training')
 
         # data_result = subprocess.run(
@@ -620,7 +636,7 @@ def run_command(context, n_gif=0, thr_increment=None, resume_training=False, tlo
 
         with open(slog_path, 'a') as csvfile:
             csvwriter = csv.writer(csvfile, delimiter=',', lineterminator='\n')
-            append = ['POST', post_total, post_gpu_util, post_gpu_mem, post_cpu_util, post_cpu_mem]
+            append = ['THR', post_total, post_gpu_util, post_gpu_mem, post_cpu_util, post_cpu_mem]
             csvwriter.writerow(append)
 
     if command == 'train':

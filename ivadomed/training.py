@@ -71,13 +71,13 @@ def train(model_params, dataset_train, dataset_val, training_params, path_output
 
     # Create log file to store per-mini batch statistics for training.
     with open(log_val_path, 'w+', newline='') as csvfile:
-        fieldnames = ['time', 'val_gpu_util', 'val_cpu_util', 'val_gpu_mem', 'val_main_mem']
+        fieldnames = ['time', 'val_gpu_util', 'val_cpu_util', 'val_gpu_mem', 'val_main_mem', 'val_loss']
         csvwriter = csv.DictWriter(csvfile, fieldnames=fieldnames)
         csvwriter.writeheader()
 
     # Create log file to store per-mini batch statistics for validation.
     with open(log_train_path, 'w+', newline='') as csvfile:
-        fieldnames = ['time', 'train_gpu_util', 'train_cpu_util', 'train_gpu_mem', 'train_main_mem']
+        fieldnames = ['time', 'train_gpu_util', 'train_cpu_util', 'train_gpu_mem', 'train_main_mem', 'train_loss']
         csvwriter = csv.DictWriter(csvfile, fieldnames=fieldnames)
         csvwriter.writeheader()
 
@@ -253,7 +253,7 @@ def train(model_params, dataset_train, dataset_val, training_params, path_output
             # Update per mini batch with statistics.
             with open(log_train_path, 'a') as csvfile:
                 csvwriter = csv.writer(csvfile, delimiter=',', lineterminator='\n')
-                append = [total, train_gpu_util, train_gpu_mem, train_cpu_util, train_cpu_mem]
+                append = [total, train_gpu_util, train_gpu_mem, train_cpu_util, train_cpu_mem, loss.item()]
                 csvwriter.writerow(append)
 
         if not step_scheduler_batch:
@@ -319,12 +319,12 @@ def train(model_params, dataset_train, dataset_val, training_params, path_output
                     val_result = subprocess.run(
                         ['nvidia-smi', '--query-gpu=utilization.gpu', '--format=csv,noheader,nounits'],
                         stdout=subprocess.PIPE, universal_newlines=True)
-                    val_gpu_util = int(train_result.stdout) / 100
+                    val_gpu_util = int(val_result.stdout) / 100
 
                     val_result = subprocess.run(
                         ['nvidia-smi', '--query-gpu=utilization.memory', '--format=csv,noheader,nounits'],
                         stdout=subprocess.PIPE, universal_newlines=True)
-                    val_gpu_mem = int(train_result.stdout) / 100
+                    val_gpu_mem = int(val_result.stdout) / 100
 
                     # TRAINING CPU UTIL STAT
                     val_cpu_util = psutil.cpu_percent() / 100
@@ -352,7 +352,7 @@ def train(model_params, dataset_train, dataset_val, training_params, path_output
                     # Update per mini batch with statistics.
                     with open(log_val_path, 'a') as csvfile:
                         csvwriter = csv.writer(csvfile, delimiter=',', lineterminator='\n')
-                        append = [total, val_gpu_util, val_gpu_mem, val_cpu_util, val_cpu_mem]
+                        append = [total, val_gpu_util, val_gpu_mem, val_cpu_util, val_cpu_mem, loss.item()]
                         csvwriter.writerow(append)
 
                 num_steps += 1

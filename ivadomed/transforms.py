@@ -297,7 +297,12 @@ class NormalizeInstance(ImedTransform):
 
     @multichannel_capable
     def __call__(self, sample, metadata=None):
-        data_out = (sample - sample.mean()) / sample.std()
+
+        ##########################################################################################
+        # Temporary fix in case of nan error for std = 0; use epsilon value of 1e-45.
+        sum = sample.std() if sample.std()!=0.0 else sample.std() + np.float32(1e-45)
+        data_out = (sample - sample.mean()) / sum
+        ##########################################################################################
         return data_out, metadata
 
 
