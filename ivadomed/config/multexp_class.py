@@ -70,7 +70,10 @@ def trainsubplot(mod1trn, mod2trn, label, ylabel, title, curr_subplot):
 
 def main():
     numexp = 3
-    direxp = 'C:/Users/harsh/ivadomed/experiments/class/'
+    path = '/home/sshatagopam/ivadomed/'
+    # path = 'C:/Users/harsh/ivadomed/'
+
+    direxp = path + 'experiments/class/'
     dirpath = [
         # direxp + 'unet/',
         direxp + 'resnet/',
@@ -80,7 +83,7 @@ def main():
         # direxp + '3dunet/'
     ]
 
-    dirsave = 'C:/Users/harsh/ivadomed/experiments/final/class/'
+    dirsave = path + 'experiments/final/class/'
     savepath = [
         # dirsave + 'unet/',
         dirsave + 'resnet/',
@@ -90,7 +93,7 @@ def main():
         # dirsave + '3dunet/'
     ]
 
-    plotdir = 'C:/Users/harsh/ivadomed/experiments/plots/class/'
+    plotdir = path + 'experiments/plots/class/'
 
     modelnames = [
         # 'unet',
@@ -100,7 +103,7 @@ def main():
         # 'hemisunet',
         # '3dunet'
     ]
-    config_path = 'C:/Users/harsh/ivadomed/ivadomed/config/class/'
+    config_path = path + 'ivadomed/config/class/'
     config_files = [
         config_path + 'class_resnet.json',
         config_path + 'class_densenet.json'
@@ -340,7 +343,7 @@ def main():
     stackedbarplot(X=X, data=time_mean, label=label, width=2, ylabel=ylabel, title=title, filename=filename)
 
     # TRAINING SUBPLOT
-    final_path = 'C:/Users/harsh/ivadomed/experiments/final/class/'
+    final_path = path + 'experiments/final/class/'
 
     resnet_trn = pd.read_csv(final_path + 'resnet/' + 'resnet_trn.csv')
     densenet_trn = pd.read_csv(final_path + 'densenet/' + 'densenet_trn.csv')
