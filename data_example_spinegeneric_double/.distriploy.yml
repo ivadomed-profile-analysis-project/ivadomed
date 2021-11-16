@@ -1,0 +1,5 @@
+release:
+  method: github
+
+postrelease:
+  add_mirror_urls: true
