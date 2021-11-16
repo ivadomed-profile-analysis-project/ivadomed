@@ -655,7 +655,7 @@ def main():
                 cpu_util_sum += trndf[j].iloc[i, 2]
                 gpu_mem_sum += trndf[j].iloc[i, 3]
                 main_mem_sum += trndf[j].iloc[i, 4]
-                loss_sum += valdf[j].iloc[i, 5]
+                loss_sum += trndf[j].iloc[i, 5]
 
             time_sum /= numexp
             gpu_util_sum /= numexp
@@ -677,7 +677,7 @@ def main():
                 cpu_util_sum += valdf[j].iloc[i, 2]
                 gpu_mem_sum += valdf[j].iloc[i, 3]
                 main_mem_sum += valdf[j].iloc[i, 4]
-                loss_sum += trndf[j].iloc[i, 5]
+                loss_sum += valdf[j].iloc[i, 5]
 
             time_sum /= numexp
             gpu_util_sum /= numexp
