@@ -40,8 +40,8 @@ def stackedbarplot(X, data, label, width, ylabel, title, filename):
 
     for bar in ax.patches:
         ax.text(
-            bar.get_x() + bar.get_width() / 2,
-            bar.get_height() / 2 + bar.get_y() - 3,
+            bar.get_x() + 0.5*bar.get_width(),
+            0.5*bar.get_height() + bar.get_y() - 3,
             round(bar.get_height(), 3),
             ha='center',
             weight='bold',

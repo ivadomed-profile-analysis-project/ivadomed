@@ -1,0 +1,11 @@
+participant_id	sex	age	date_of_scan	institution_id	institution	manufacturer	manufacturers_model_name	receive_coil_name	software_versions	researcher
+sub-cardiff03	M	33	2019-03-05	cardiff	CUBRIC, Cardiff University, Wales, UK	Siemens	Prisma	64ch head+neck	VE11C	G. Tackley, S. Kusmia, R. Wise
+sub-hamburg01	M	28	2019-03-08	hamburg	Institute of Systems Neuroscience, University Medical Center Hamburg-Eppendorf	Siemens	Prisma-fit	64ch+spine	VE11C	A. Tinnermann, J. Finsterbusch, C. Buechel
+sub-juntendo750w01	F	28	2019-02-07	juntendo750w	JUNTENDO_UNV_HP	GE	MR750w	-	27_LX_MR_Software_release:DV26.0_R02_1810.b	Hagiwara A.
+sub-mpicbs06	M	22	2019-04-05	mpicbs	Max Planck Institute for Human Cognitive and Brain Sciences	Siemens	Prisma-fit	64ch+spine	VE11C	F. Eippert, T. Leutritz, N. Weiskopf
+sub-oxfordFmrib07	M	31	2019-02-27	oxfordFmrib	Wellcome Centre for Integrative Neuroimaging, FMRIB, Nuffield Department of Clinical Neurosciences, University of Oxford	Siemens	Prisma	64ch	VE11C	D. Papp, A. K. Smith
+sub-oxfordFmrib11	F	36	2019-03-13	oxfordFmrib	Wellcome Centre for Integrative Neuroimaging, FMRIB, Nuffield Department of Clinical Neurosciences, University of Oxford	Siemens	Prisma	64ch	VE11C	D. Papp, A. K. Smith
+sub-sapienza05	-	-	-	sapienza	Sapienza University, Rome, Italy	Philips	Achieva	-	5.4.1_5.4.1.1	Michela Fratini
+sub-strasbourg04	F	50	2019-04-03	strasbourg	ICube Laboratory	Siemens	Verio	12ch+4ch neck	VB17	P. L. de Sousa
+sub-tokyoSkyra06	M	24	2019-10-01	tokyo	Skyrathe University of Tokyo	Siemens	Skyra	HeadNeck_20	syngo_MR_E11	K. Kamiya, Y. Suzuki
+sub-unf01	F	24	2018-12-07	unf	Neuroimaging Functional Unit (UNF), CRIUGM, Polytechnique Montreal	Siemens	Prisma-fit	HeadNeck_64	syngo_MR_E11	J. Cohen-Adad, A. Foias
