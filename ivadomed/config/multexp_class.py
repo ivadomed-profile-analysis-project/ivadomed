@@ -18,7 +18,7 @@ def multbarplot(X, data, label, width, err, ylabel, title, filename, curr_subplo
         curr_label = label[i]
         curr_err = err[i]
         plt.bar(X_axis - width / 2 + (i * width / n), curr_data, width / n, label=curr_label, align='edge')
-               # yerr=curr_err)
+        # yerr=curr_err)
 
     plt.xticks(X_axis, X)
     plt.ylabel(ylabel)
@@ -38,6 +38,7 @@ def stackedbarplot(X, data, label, width, ylabel, title, filename):
         plt.bar(X_axis, curr_data, width / n, label=curr_label, bottom=bot)
         bot = [x + y for x, y in zip(bot, curr_data)]
 
+    # https://www.pythoncharts.com/matplotlib/stacked-bar-charts-labels/
     for bar in ax.patches:
         ax.text(
             bar.get_x() + bar.get_width() / 2,
@@ -70,8 +71,8 @@ def trainsubplot(mod1trn, mod2trn, label, ylabel, title, curr_subplot):
 
 def main():
     numexp = 3
-    path = '/home/sshatagopam/ivadomed/'
-    # path = 'C:/Users/harsh/ivadomed/'
+    # path = '/home/sshatagopam/ivadomed/'
+    path = 'C:/Users/harsh/ivadomed/'
 
     direxp = path + 'experiments/class/'
     dirpath = [
@@ -123,8 +124,6 @@ def main():
     if not os.path.exists(config_path):
         os.makedirs(config_path)
 
-
-
     time_data = []
     time_train = []
     time_post = []
@@ -175,7 +174,8 @@ def main():
             valdf.append(pd.DataFrame(pd.read_csv(vlog[i])))
 
         sys = pd.DataFrame(columns=['comp', 'time', 'gpu_util', 'cpu_util', 'gpu_mem', 'main_mem'])
-        trn = pd.DataFrame(columns=['time', 'train_gpu_util', 'train_cpu_util', 'train_gpu_mem', 'train_main_mem', 'train_loss'])
+        trn = pd.DataFrame(
+            columns=['time', 'train_gpu_util', 'train_cpu_util', 'train_gpu_mem', 'train_main_mem', 'train_loss'])
         val = pd.DataFrame(columns=['time', 'val_gpu_util', 'val_cpu_util', 'val_gpu_mem', 'val_main_mem', 'val_loss'])
 
         time_row = [df.iloc[0, 1] for df in sysdf]
@@ -348,32 +348,32 @@ def main():
     resnet_trn = pd.read_csv(final_path + 'resnet/' + 'resnet_trn.csv')
     densenet_trn = pd.read_csv(final_path + 'densenet/' + 'densenet_trn.csv')
 
-    fig, ax = plt.subplots(2,3, figsize=(20, 15))
+    fig, ax = plt.subplots(2, 3, figsize=(20, 15))
     label = ['ResNet', 'DenseNet']
 
     ylabel = 'GPU Utilization (%)'
     title = 'Training GPU Utilization Per Mini-Batch Across Architectures'
-    trainsubplot(resnet_trn.iloc[:, 1], densenet_trn.iloc[:, 1],  label, ylabel, title, 1)
+    trainsubplot(resnet_trn.iloc[:, 1], densenet_trn.iloc[:, 1], label, ylabel, title, 1)
 
     ylabel = 'CPU Utilization (%)'
     title = 'Training CPU Utilization Per Mini-Batch Across Architectures'
-    trainsubplot(resnet_trn.iloc[:, 2], densenet_trn.iloc[:, 2],  label, ylabel, title, 2)
+    trainsubplot(resnet_trn.iloc[:, 2], densenet_trn.iloc[:, 2], label, ylabel, title, 2)
 
     ylabel = 'GPU Memory Utilization (%)'
     title = 'Training GPU Memory Utilization Per Mini-Batch Across Architectures'
-    trainsubplot(resnet_trn.iloc[:, 3], densenet_trn.iloc[:, 3],  label, ylabel, title, 3)
+    trainsubplot(resnet_trn.iloc[:, 3], densenet_trn.iloc[:, 3], label, ylabel, title, 3)
 
     ylabel = 'CPU Memory Utilization (%)'
     title = 'Training CPU Memory Utilization Per Mini-Batch Across Architectures'
-    trainsubplot(resnet_trn.iloc[:, 4], densenet_trn.iloc[:, 4],  label, ylabel, title, 4)
+    trainsubplot(resnet_trn.iloc[:, 4], densenet_trn.iloc[:, 4], label, ylabel, title, 4)
 
     ylabel = 'Time (s)'
     title = 'Training Time Per Mini-Batch Across Architectures'
-    trainsubplot(resnet_trn.iloc[:, 0], densenet_trn.iloc[:, 0],  label, ylabel, title, 5)
+    trainsubplot(resnet_trn.iloc[:, 0], densenet_trn.iloc[:, 0], label, ylabel, title, 5)
 
-    ylabel = 'Dice Loss'
-    title = 'Dice Loss Per Mini-Batch Across Architectures'
-    trainsubplot(resnet_trn.iloc[:, 5], densenet_trn.iloc[:, 5],  label, ylabel, title, 6)
+    ylabel = 'Log Loss'
+    title = 'Log Loss Per Mini-Batch Across Architectures'
+    trainsubplot(resnet_trn.iloc[:, 5], densenet_trn.iloc[:, 5], label, ylabel, title, 6)
 
     # ax[1][2].set_visible(False)
     # ax[1][0].set_position([0.24, 0.125, 0.228, 0.343])
@@ -386,32 +386,32 @@ def main():
     resnet_val = pd.read_csv(final_path + 'resnet/' + 'resnet_val.csv')
     densenet_val = pd.read_csv(final_path + 'densenet/' + 'densenet_val.csv')
 
-    fig, ax = plt.subplots(2,3, figsize=(20, 15))
+    fig, ax = plt.subplots(2, 3, figsize=(20, 15))
     label = ['ResNet', 'DenseNet']
 
     ylabel = 'GPU Utilization (%)'
     title = 'Validation GPU Utilization Per Mini-Batch Across Architectures'
-    trainsubplot(resnet_val.iloc[:, 1], densenet_val.iloc[:, 1],  label, ylabel, title, 1)
+    trainsubplot(resnet_val.iloc[:, 1], densenet_val.iloc[:, 1], label, ylabel, title, 1)
 
     ylabel = 'CPU Utilization (%)'
     title = 'Validation CPU Utilization Per Mini-Batch Across Architectures'
-    trainsubplot(resnet_val.iloc[:, 2], densenet_val.iloc[:, 2],  label, ylabel, title, 2)
+    trainsubplot(resnet_val.iloc[:, 2], densenet_val.iloc[:, 2], label, ylabel, title, 2)
 
     ylabel = 'GPU Memory Utilization (%)'
     title = 'Validation GPU Memory Utilization Per Mini-Batch Across Architectures'
-    trainsubplot(resnet_val.iloc[:, 3], densenet_val.iloc[:, 3],  label, ylabel, title, 3)
+    trainsubplot(resnet_val.iloc[:, 3], densenet_val.iloc[:, 3], label, ylabel, title, 3)
 
     ylabel = 'CPU Memory Utilization (%)'
     title = 'Validation CPU Memory Utilization Per Mini-Batch Across Architectures'
-    trainsubplot(resnet_val.iloc[:, 4], densenet_val.iloc[:, 4],  label, ylabel, title, 4)
+    trainsubplot(resnet_val.iloc[:, 4], densenet_val.iloc[:, 4], label, ylabel, title, 4)
 
     ylabel = 'Time (s)'
     title = 'Validation Time Per Mini-Batch Across Architectures'
     trainsubplot(resnet_val.iloc[:, 0], densenet_val.iloc[:, 0], label, ylabel, title, 5)
 
-    ylabel = 'Dice Loss'
-    title = 'Dice Loss Per Mini-Batch Across Architectures'
-    trainsubplot(resnet_val.iloc[:, 5], densenet_val.iloc[:, 5],  label, ylabel, title, 6)
+    ylabel = 'Log Loss'
+    title = 'Log Loss Per Mini-Batch Across Architectures'
+    trainsubplot(resnet_val.iloc[:, 5], densenet_val.iloc[:, 5], label, ylabel, title, 6)
 
     # ax[1][2].set_visible(False)
     # ax[1][0].set_position([0.24, 0.125, 0.228, 0.343])

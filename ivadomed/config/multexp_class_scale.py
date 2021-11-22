@@ -76,8 +76,8 @@ def trainsubplot(mod1trn, mod2trn, mod3trn, label, ylabel, title, curr_subplot):
 
 def main():
     numexp = 3
-    path = '/home/sshatagopam/ivadomed/'
-    # path = 'C:/Users/harsh/ivadomed/'
+    # path = '/home/sshatagopam/ivadomed/'
+    path = 'C:/Users/harsh/ivadomed/'
 
     direxp = path + 'experiments/class_scale/'
     dirpath = [
@@ -382,8 +382,8 @@ def main():
     title = 'Training Time Per Mini-Batch Across Dataset Sizes'
     trainsubplot(_0_5_trn.iloc[:, 0], _1_trn.iloc[:, 0], _2_trn.iloc[:, 0], label, ylabel, title, 5)
 
-    ylabel = 'Dice Loss'
-    title = 'Dice Loss Per Mini-Batch Across Architectures'
+    ylabel = 'Log Loss'
+    title = 'Log Loss Per Mini-Batch Across Architectures'
     trainsubplot(_0_5_trn.iloc[:, 5], _1_trn.iloc[:, 5], _2_trn.iloc[:, 5], label, ylabel, title, 6)
 
     plt.savefig(plotdir + 'training_subplot.png')
@@ -420,8 +420,8 @@ def main():
     title = 'Validation Time Per Mini-Batch Across Dataset Sizes'
     trainsubplot(_0_5_val.iloc[:, 0], _1_val.iloc[:, 0], _2_val.iloc[:, 0], label, ylabel, title, 5)
 
-    ylabel = 'Dice Loss'
-    title = 'Dice Loss Per Mini-Batch Across Architectures'
+    ylabel = 'Log Loss'
+    title = 'Log Loss Per Mini-Batch Across Architectures'
     trainsubplot(_0_5_val.iloc[:, 5], _1_val.iloc[:, 5], _2_val.iloc[:, 5], label, ylabel, title, 6)
 
 

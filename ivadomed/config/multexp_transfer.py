@@ -269,7 +269,7 @@ def main():
             loss_sum /= numexp
 
             trn = trn.append({'time': time_sum, 'train_gpu_util': gpu_util_sum, 'train_cpu_util': cpu_util_sum,
-                              'train_gpu_mem': gpu_mem_sum, 'train_main_mem': main_mem_sum}, ignore_index=True)
+                              'train_gpu_mem': gpu_mem_sum, 'train_main_mem': main_mem_sum, 'train_loss': loss_sum}, ignore_index=True)
 
         for i in range(valdf[0].shape[0]):
             time_sum = gpu_util_sum = cpu_util_sum = gpu_mem_sum = main_mem_sum = loss_sum = 0

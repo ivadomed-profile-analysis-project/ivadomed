@@ -74,25 +74,25 @@ def main():
     path = '/home/sshatagopam/ivadomed/'
     # path = 'C:/Users/harsh/ivadomed/'
 
-    direxp = 'C:/Users/harsh/ivadomed/experiments/thr/'
+    direxp = path + 'ivadomed/experiments/thr/'
     dirpath = [
         direxp + 'unet_0.01/',
         direxp + 'unet_0.1/',
     ]
 
-    dirsave = 'C:/Users/harsh/ivadomed/experiments/final/thr/'
+    dirsave = path + 'ivadomed/experiments/final/thr/'
     savepath = [
         dirsave + 'unet_0.01/',
         dirsave + 'unet_0.1/',
     ]
 
-    plotdir = 'C:/Users/harsh/ivadomed/experiments/plots/thr/'
+    plotdir = path + 'ivadomed/experiments/plots/thr/'
 
     modelnames = [
         'unet_0.01',
         'unet_0.1'
     ]
-    config_path = 'C:/Users/harsh/ivadomed/ivadomed/config/thr/'
+    config_path = path + 'ivadomed/ivadomed/config/thr/'
     config_files = [
         config_path + 'unet_thr_1.json',
         config_path + 'unet_thr_1.json'
@@ -291,7 +291,7 @@ def main():
     # SYSTEM SUBPLOT
 
     X = ['Data', 'Train', 'Post', 'THR']
-    label = ['UNet, inc=0.01', 'UNet, inc=0.1', 'UNet, inc=0.2']
+    label = ['UNet, inc=0.01', 'UNet, inc=0.1']
     width = 0.75
 
     fig, ax = plt.subplots(figsize=(20, 15))

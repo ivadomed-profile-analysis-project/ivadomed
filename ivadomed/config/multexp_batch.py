@@ -75,8 +75,8 @@ def trainsubplot(mod1trn, mod2trn, mod3trn, label, ylabel, title, curr_subplot):
 
 def main():
     numexp = 3
-    path = '/home/sshatagopam/ivadomed/'
-    # path = 'C:/Users/harsh/ivadomed/'
+    # path = '/home/sshatagopam/ivadomed/'
+    path = 'C:/Users/harsh/ivadomed/'
 
     direxp = path + 'experiments/batch/'
     dirpath = [
@@ -296,7 +296,7 @@ def main():
     # SYSTEM SUBPLOT
 
     X = ['Data', 'Train', 'Post']
-    label = ['UNet, batch=16', 'UNet, batch=64', 'UNet, batch=256']
+    label = ['UNet, batch=8', 'UNet, batch=16', 'UNet, batch=64']
     width = 0.75
 
     fig, ax = plt.subplots(figsize=(20, 15))
@@ -331,7 +331,7 @@ def main():
 
     # SYSTEM TIME PLOT
 
-    X = ['UNet, batch=16', 'UNet, batch=64', 'UNet, batch=256']
+    X = ['UNet, batch=8', 'UNet, batch=16', 'UNet, batch=64']
     time_mean = [time_data, time_train, time_post]
     label = ['Data', 'Train', 'Post']
     filename = plotdir + 'time_per_comp_plot.png'
@@ -347,7 +347,7 @@ def main():
     batch_256_trn = pd.read_csv(final_path + 'batch_256/' + 'batch_256_trn.csv')
 
     fig, ax = plt.subplots(2,3, figsize=(20, 15))
-    label = ['UNet, batch=16', 'UNet, batch=64', 'UNet, batch=256']
+    label = ['UNet, batch=8', 'UNet, batch=16', 'UNet, batch=64']
 
     ylabel = 'GPU Utilization (%)'
     title = 'Training GPU Utilization Per Mini-Batch Across Architectures'
@@ -383,7 +383,7 @@ def main():
     batch_256_val = pd.read_csv(final_path + 'batch_256/' + 'batch_256_val.csv')
 
     fig, ax = plt.subplots(2,3, figsize=(20, 15))
-    label = ['UNet, batch=16', 'UNet, batch=64', 'UNet, batch=256']
+    label = ['UNet, batch=8', 'UNet, batch=16', 'UNet, batch=64']
 
     ylabel = 'GPU Utilization (%)'
     title = 'Validation GPU Utilization Per Mini-Batch Across Architectures'
