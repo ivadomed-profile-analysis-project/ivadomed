@@ -44,8 +44,7 @@ def stackedbarplot(X, data, label, width, ylabel, title, filename):
             bar.get_height() / 2 + bar.get_y() - 10,
             round(bar.get_height(), 3),
             ha='center',
-            weight='bold',
-            color='w'
+            weight='bold'
         )
 
     # ax.set_yscale('log')

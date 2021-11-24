@@ -71,28 +71,28 @@ def trainsubplot(mod1trn, mod2trn, label, ylabel, title, curr_subplot):
 
 def main():
     numexp = 3
-    path = '/home/sshatagopam/ivadomed/'
-    # path = 'C:/Users/harsh/ivadomed/'
+    #  = '/home/sshatagopam/ivadomed/'
+    path = 'C:/Users/harsh/ivadomed/'
 
-    direxp = path + 'ivadomed/experiments/thr/'
+    direxp = path + 'experiments/thr/'
     dirpath = [
         direxp + 'unet_0.01/',
         direxp + 'unet_0.1/',
     ]
 
-    dirsave = path + 'ivadomed/experiments/final/thr/'
+    dirsave = path + 'experiments/final/thr/'
     savepath = [
         dirsave + 'unet_0.01/',
         dirsave + 'unet_0.1/',
     ]
 
-    plotdir = path + 'ivadomed/experiments/plots/thr/'
+    plotdir = path + 'experiments/plots/thr/'
 
     modelnames = [
         'unet_0.01',
         'unet_0.1'
     ]
-    config_path = path + 'ivadomed/ivadomed/config/thr/'
+    config_path = path + 'ivadomed/config/thr/'
     config_files = [
         config_path + 'unet_thr_1.json',
         config_path + 'unet_thr_1.json'

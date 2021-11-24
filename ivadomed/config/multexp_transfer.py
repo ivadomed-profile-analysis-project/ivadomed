@@ -76,8 +76,8 @@ def trainsubplot(mod1trn, mod2trn, mod3trn, mod4trn, label, ylabel, title, curr_
 
 def main():
     numexp = 3
-    path = '/home/sshatagopam/ivadomed/'
-    # path = 'C:/Users/harsh/ivadomed/'
+    # path = '/home/sshatagopam/ivadomed/'
+    path = 'C:/Users/harsh/ivadomed/'
 
     direxp = path + 'experiments/transfer/'
     dirpath = [
