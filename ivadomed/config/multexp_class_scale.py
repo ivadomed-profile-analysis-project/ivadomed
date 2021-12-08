@@ -25,11 +25,13 @@ def multbarplot(X, data, label, width, err, ylabel, title, curr_subplot):
     plt.title(title)
     plt.legend()
 
-
+# Used this guide to add bar counts to stacked bar plots.
+# https://www.pythoncharts.com/matplotlib/stacked-bar-charts-labels/
 def stackedbarplot(X, data, label, width, ylabel, title, filename):
     X_axis = np.arange(len(X))
     n = len(data)
     fig, ax = plt.subplots(figsize=(20, 15))
+
 
     bot = [0 for i in range(len(X))]
     for i in range(n):
@@ -41,13 +43,13 @@ def stackedbarplot(X, data, label, width, ylabel, title, filename):
     for bar in ax.patches:
         ax.text(
             bar.get_x() + bar.get_width() / 2,
-            bar.get_height() / 2 + bar.get_y() - 10,
+            bar.get_height() / 2 + bar.get_y(),
             round(bar.get_height(), 3),
             ha='center',
             weight='bold'
         )
 
-    # ax.set_yscale('log')
+    #ax.set_yscale('log')
 
     plt.xticks(X_axis, X)
     plt.ylabel(ylabel)
@@ -74,7 +76,9 @@ def trainsubplot(mod1trn, mod2trn, mod3trn, label, ylabel, title, curr_subplot):
 
 
 def main():
+    # Get path parameters for ivadomed and experiment parameters.
     numexp = 3
+    # Replace this with your own directory.
     # path = '/home/sshatagopam/ivadomed/'
     path = 'C:/Users/harsh/ivadomed/'
 
@@ -107,7 +111,7 @@ def main():
         config_path_1x + 'resnet_1xdata.json',
         config_path_2x + 'resnet_10xdata.json'
     ]
-
+    # Create directories if they don't exist yet.
     for dir in dirpath:
         if not os.path.exists(dir):
             os.makedirs(dir)
@@ -128,8 +132,7 @@ def main():
     if not os.path.exists(config_path_0_5x):
         os.makedirs(config_path_0_5x)
 
-
-
+    # Make lists for storing temp profiling data.
     time_data = []
     time_train = []
     time_post = []
@@ -146,7 +149,9 @@ def main():
     cpu_mem_mean = []
     cpu_mem_err = []
 
+    # We repeat experiments for each architecture.
     for path_num in range(len(dirpath)):
+        # Get current experiment parameters.
         currdir = dirpath[path_num]
         final_path = savepath[path_num]
         curr_model = modelnames[path_num]
@@ -162,11 +167,13 @@ def main():
             vlog.append(currdir + 'vallog' + str(i + 1) + '.csv')
             slog.append(currdir + 'syslog' + str(i + 1) + '.csv')
 
+        # Get the commands for each ivadomed call (per experiment).
         command = []
         for i in range(numexp):
             com = ['ivadomed', '-c', curr_config, '--tlog', tlog[i], '--vlog', vlog[i], '--slog', slog[i]]
             command.append(com)
 
+        # Run the current experiment numexp times.
         for i in range(numexp):
             subprocess.run(command[i])
 
@@ -174,6 +181,7 @@ def main():
         trndf = []
         valdf = []
 
+        # Create csv files for system, train, and validation files.
         for i in range(numexp):
             sysdf.append(pd.DataFrame(pd.read_csv(slog[i])))
             trndf.append(pd.DataFrame(pd.read_csv(tlog[i])))

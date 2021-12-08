@@ -25,7 +25,8 @@ def multbarplot(X, data, label, width, err, ylabel, title, filename, curr_subplo
     plt.title(title)
     plt.legend()
 
-
+# Used this guide to add bar counts to stacked bar plots.
+# https://www.pythoncharts.com/matplotlib/stacked-bar-charts-labels/
 def stackedbarplot(X, data, label, width, ylabel, title, filename):
     X_axis = np.arange(len(X))
     n = len(data)
@@ -55,7 +56,7 @@ def stackedbarplot(X, data, label, width, ylabel, title, filename):
     plt.savefig(filename)
     # plt.show()
 
-
+# Plot training/validation utilization/timing/loss figures.
 def trainsubplot(mod1trn, mod2trn, label, ylabel, title, curr_subplot):
     plt.subplot(2, 3, curr_subplot)
     len_norm = mod1trn.shape[0]
@@ -70,8 +71,10 @@ def trainsubplot(mod1trn, mod2trn, label, ylabel, title, curr_subplot):
 
 
 def main():
+    # Get path parameters for ivadomed and experiment parameters.
     numexp = 3
-    #  = '/home/sshatagopam/ivadomed/'
+    # Replace this with your own directory.
+    #  path = '/home/sshatagopam/ivadomed/'
     path = 'C:/Users/harsh/ivadomed/'
 
     direxp = path + 'experiments/thr/'
@@ -102,7 +105,7 @@ def main():
         0.01,
         0.1
     ]
-
+    # Create directories if they don't exist yet.
     for dir in dirpath:
         if not os.path.exists(dir):
             os.makedirs(dir)
@@ -118,7 +121,7 @@ def main():
         os.makedirs(config_path)
 
     dummy_path = path + "experiments/dummy/dummy.csv"
-
+    # Make lists for storing temp profiling data.
     time_data = []
     time_train = []
     time_post = []
@@ -136,7 +139,9 @@ def main():
     cpu_mem_mean = []
     cpu_mem_err = []
 
+    # We repeat experiments for each architecture.
     for path_num in range(len(dirpath)):
+        # Get current experiment parameters.
         currdir = dirpath[path_num]
         final_path = savepath[path_num]
         curr_model = modelnames[path_num]
@@ -152,12 +157,14 @@ def main():
             vlog.append(currdir + 'vallog' + str(i + 1) + '.csv')
             slog.append(currdir + 'syslog' + str(i + 1) + '.csv')
 
+        # Get the commands for each ivadomed call (per experiment).
         command = []
         for i in range(numexp):
             com = f'ivadomed -c {curr_config} -t {thr[path_num]} -g 1 --tlog {tlog[i]} --vlog {vlog[i]} --slog {slog[i]}'
             #com = ['ivadomed', '-c', curr_config, '-t', 0.1, '-g', '1', '--tlog', tlog[i], '--vlog', vlog[i], '--slog', slog[i]]
             command.append(com)
 
+        # Run the current experiment numexp times.
         for i in range(numexp):
             subprocess.run(command[i])
 
@@ -165,6 +172,7 @@ def main():
         trndf = []
         valdf = []
 
+        # Create csv files for system, train, and validation files.
         for i in range(numexp):
             sysdf.append(pd.DataFrame(pd.read_csv(slog[i])))
             trndf.append(pd.DataFrame(pd.read_csv(tlog[i])))

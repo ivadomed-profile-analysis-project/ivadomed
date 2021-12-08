@@ -64,7 +64,7 @@
         },
         "mixup_alpha": null,
         "transfer_learning": {
-            "retrain_model": "/home/sshatagopam/ivadomed/output/transfer/orig/best_model.pt",
+            "retrain_model": "C:/Users/harsh/ivadomed/output/transfer/orig/best_model.pt",
             "retrain_fraction": 0.25,
             "reset": false
         }

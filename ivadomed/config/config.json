@@ -45,7 +45,7 @@
             "name": "DiceLoss"
         },
         "training_time": {
-            "num_epochs": 1,
+            "num_epochs": 100,
             "early_stopping_patience": 50,
             "early_stopping_epsilon": 0.001
         },

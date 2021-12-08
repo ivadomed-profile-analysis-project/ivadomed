@@ -25,7 +25,8 @@ def multbarplot(X, data, label, width, err, ylabel, title, curr_subplot):
     plt.title(title)
     plt.legend()
 
-
+# Used this guide to add bar counts to stacked bar plots.
+# https://www.pythoncharts.com/matplotlib/stacked-bar-charts-labels/
 def stackedbarplot(X, data, label, width, ylabel, title, filename):
     X_axis = np.arange(len(X))
     n = len(data)
@@ -54,7 +55,7 @@ def stackedbarplot(X, data, label, width, ylabel, title, filename):
     plt.savefig(filename)
     # plt.show()
 
-
+# Plot training/validation utilization/timing/loss figures.
 def trainsubplot(mod1trn, mod2trn, mod3trn, label, ylabel, title, curr_subplot):
     plt.subplot(2, 3, curr_subplot)
     len_1 = mod1trn.shape[0]
@@ -72,7 +73,9 @@ def trainsubplot(mod1trn, mod2trn, mod3trn, label, ylabel, title, curr_subplot):
 
 
 def main():
+    # Get path parameters for ivadomed and experiment parameters.
     numexp = 3
+    # Replace this with your own directory.
     # path = '/home/sshatagopam/ivadomed/'
     path = 'C:/Users/harsh/ivadomed/'
 
@@ -117,7 +120,7 @@ def main():
         # config_path_1x + '3dunet_1xdata.json',
         # config_path_2x + '3dunet_2xdata.json'
     ]
-
+    # Create directories if they don't exist yet.
     for dir in dirpath:
         if not os.path.exists(dir):
             os.makedirs(dir)
@@ -138,8 +141,7 @@ def main():
     if not os.path.exists(config_path_0_5x):
         os.makedirs(config_path_0_5x)
 
-
-
+    # Make lists for storing temp profiling data.
     time_data = []
     time_train = []
     time_post = []
@@ -156,7 +158,9 @@ def main():
     cpu_mem_mean = []
     cpu_mem_err = []
 
+    # We repeat experiments for each architecture.
     for path_num in range(len(dirpath)):
+        # Get current experiment parameters.
         currdir = dirpath[path_num]
         final_path = savepath[path_num]
         curr_model = modelnames[path_num]
@@ -172,11 +176,13 @@ def main():
             vlog.append(currdir + 'vallog' + str(i + 1) + '.csv')
             slog.append(currdir + 'syslog' + str(i + 1) + '.csv')
 
+        # Get the commands for each ivadomed call (per experiment).
         command = []
         for i in range(numexp):
             com = ['ivadomed', '-c', curr_config, '--tlog', tlog[i], '--vlog', vlog[i], '--slog', slog[i]]
             command.append(com)
 
+        # Run the current experiment numexp times.
         for i in range(numexp):
             subprocess.run(command[i])
 
@@ -184,6 +190,7 @@ def main():
         trndf = []
         valdf = []
 
+        # Create csv files for system, train, and validation files.
         for i in range(numexp):
             sysdf.append(pd.DataFrame(pd.read_csv(slog[i])))
             trndf.append(pd.DataFrame(pd.read_csv(tlog[i])))
@@ -316,7 +323,7 @@ def main():
     X = ['Data', 'Train', 'Post']
     label = ['UNet, dsize=0.5',
              'UNet, dsize=1.0',
-             'UNet, dsize=2.0',
+             'UNet, dsize=10.0',
              # '3D-UNet, dsize=0.5',
              # '3D-UNet, dsize=1.0',
              # '3D-UNet, dsize=2.0'
@@ -353,7 +360,7 @@ def main():
 
     X = ['UNet, dsize=0.5',
          'UNet, dsize=1.0',
-         'UNet, dsize=2.0',
+         'UNet, dsize=10.0',
          # '3D-UNet, dsize=0.5',
          # '3D-UNet, dsize=1.0',
          # '3D-UNet, dsize=2.0'
@@ -374,7 +381,7 @@ def main():
     fig, ax = plt.subplots(2,3, figsize=(20, 15))
     label = ['UNet, dsize=0.5',
              'UNet, dsize=1.0',
-             'UNet, dsize=2.0',
+             'UNet, dsize=10.0',
              # '3D-UNet, dsize=0.5',
              # '3D-UNet, dsize=1.0',
              # '3D-UNet, dsize=2.0'
@@ -419,7 +426,7 @@ def main():
     fig, ax = plt.subplots(2,3, figsize=(20, 15))
     label = ['UNet, dsize=0.5',
              'UNet, dsize=1.0',
-             'UNet, dsize=2.0',
+             'UNet, dsize=10.0',
              # '3D-UNet, dsize=0.5',
              # '3D-UNet, dsize=1.0',
              # '3D-UNet, dsize=2.0'
@@ -458,7 +465,7 @@ def main():
 
     ##############################################################
 
-
+    # REPEAT FOR 3D UNET ARCHITECTURE #
 
     dirpath = [
         # direxp + 'unet_0.5/',
@@ -703,7 +710,7 @@ def main():
              # 'UNet, dsize=2.0',
              '3D-UNet, dsize=0.5',
              '3D-UNet, dsize=1.0',
-             '3D-UNet, dsize=2.0'
+             '3D-UNet, dsize=10.0'
              ]
     width = 0.75
 
@@ -741,7 +748,7 @@ def main():
         #  'UNet, dsize=2.0',
          '3D-UNet, dsize=0.5',
          '3D-UNet, dsize=1.0',
-         '3D-UNet, dsize=2.0'
+         '3D-UNet, dsize=10.0'
         ]
     time_mean = [time_data, time_train, time_post]
     label = ['Data', 'Train', 'Post']
@@ -763,7 +770,7 @@ def main():
             #  'UNet, dsize=2.0',
              '3D-UNet, dsize=0.5',
              '3D-UNet, dsize=1.0',
-             '3D-UNet, dsize=2.0'
+             '3D-UNet, dsize=10.0'
         ]
 
     ylabel = 'GPU Utilization (%)'
@@ -809,7 +816,7 @@ def main():
         #      'UNet, dsize=2.0',
              '3D-UNet, dsize=0.5',
              '3D-UNet, dsize=1.0',
-             '3D-UNet, dsize=2.0'
+             '3D-UNet, dsize=10.0'
              ]
 
     ylabel = 'GPU Utilization (%)'

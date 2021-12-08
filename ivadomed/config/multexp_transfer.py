@@ -25,7 +25,8 @@ def multbarplot(X, data, label, width, err, ylabel, title, filename, curr_subplo
     plt.title(title)
     plt.legend()
 
-
+# Used this guide to add bar counts to stacked bar plots.
+# https://www.pythoncharts.com/matplotlib/stacked-bar-charts-labels/
 def stackedbarplot(X, data, label, width, ylabel, title, filename):
     X_axis = np.arange(len(X))
     n = len(data)
@@ -38,6 +39,8 @@ def stackedbarplot(X, data, label, width, ylabel, title, filename):
         plt.bar(X_axis, curr_data, width / n, label=curr_label, bottom=bot)
         bot = [x + y for x, y in zip(bot, curr_data)]
 
+    # Used this guide to add bar counts to stacked bar plots.
+    # https://www.pythoncharts.com/matplotlib/stacked-bar-charts-labels/
     for bar in ax.patches:
         ax.text(
             bar.get_x() + bar.get_width() / 2,
@@ -55,7 +58,7 @@ def stackedbarplot(X, data, label, width, ylabel, title, filename):
     plt.savefig(filename)
     # plt.show()
 
-
+# Plot training/validation utilization/timing/loss figures.
 def trainsubplot(mod1trn, mod2trn, mod3trn, mod4trn, label, ylabel, title, curr_subplot):
     plt.subplot(2, 3, curr_subplot)
     len1 = mod1trn.shape[0]
@@ -75,7 +78,9 @@ def trainsubplot(mod1trn, mod2trn, mod3trn, mod4trn, label, ylabel, title, curr_
 
 
 def main():
+    # Get path parameters for ivadomed and experiment parameters.
     numexp = 3
+    # Replace this with your own directory.
     # path = '/home/sshatagopam/ivadomed/'
     path = 'C:/Users/harsh/ivadomed/'
 
@@ -110,7 +115,7 @@ def main():
         config_path + 'transfer50.json',
         config_path + 'transfer75.json'
     ]
-
+    # Create directories if they don't exist yet.
     for dir in dirpath:
         if not os.path.exists(dir):
             os.makedirs(dir)
@@ -125,8 +130,7 @@ def main():
     if not os.path.exists(config_path):
         os.makedirs(config_path)
 
-
-
+    # Make lists for storing temp profiling data.
     time_data = []
     time_train = []
     time_post = []
@@ -143,7 +147,9 @@ def main():
     cpu_mem_mean = []
     cpu_mem_err = []
 
+    # We repeat experiments for each architecture.
     for path_num in range(len(dirpath)):
+        # Get current experiment parameters.
         currdir = dirpath[path_num]
         final_path = savepath[path_num]
         curr_model = modelnames[path_num]
@@ -159,11 +165,13 @@ def main():
             vlog.append(currdir + 'vallog' + str(i + 1) + '.csv')
             slog.append(currdir + 'syslog' + str(i + 1) + '.csv')
 
+        # Get the commands for each ivadomed call (per experiment).
         command = []
         for i in range(numexp):
             com = ['ivadomed', '-c', curr_config, '--tlog', tlog[i], '--vlog', vlog[i], '--slog', slog[i]]
             command.append(com)
 
+        # Run the current experiment numexp times.
         for i in range(numexp):
             subprocess.run(command[i])
 
@@ -171,6 +179,7 @@ def main():
         trndf = []
         valdf = []
 
+        # Create csv files for system, train, and validation files.
         for i in range(numexp):
             sysdf.append(pd.DataFrame(pd.read_csv(slog[i])))
             trndf.append(pd.DataFrame(pd.read_csv(tlog[i])))
@@ -395,23 +404,23 @@ def main():
     label = ['UNet', 'UNet, retrain=0.25', 'UNet, retrain=0.50', 'UNet, retrain=0.75']
 
     ylabel = 'GPU Utilization (%)'
-    title = 'Training GPU Utilization Per Mini-Batch Across Architectures'
+    title = 'Validation GPU Utilization Per Mini-Batch Across Architectures'
     trainsubplot(unet_val.iloc[:, 1], unet25_val.iloc[:, 1], unet50_val.iloc[:, 1], unet75_val.iloc[:, 1], label, ylabel, title, 1)
 
     ylabel = 'CPU Utilization (%)'
-    title = 'Training CPU Utilization Per Mini-Batch Across Architectures'
+    title = 'Validation CPU Utilization Per Mini-Batch Across Architectures'
     trainsubplot(unet_val.iloc[:, 2], unet25_val.iloc[:, 2], unet50_val.iloc[:, 2], unet75_val.iloc[:, 2],  label, ylabel, title, 2)
 
     ylabel = 'GPU Memory Utilization (%)'
-    title = 'Training GPU Memory Utilization Per Mini-Batch Across Architectures'
+    title = 'Validation GPU Memory Utilization Per Mini-Batch Across Architectures'
     trainsubplot(unet_val.iloc[:, 3], unet25_val.iloc[:, 3], unet50_val.iloc[:, 3], unet75_val.iloc[:, 3],  label, ylabel, title, 3)
 
     ylabel = 'CPU Memory Utilization (%)'
-    title = 'Training CPU Memory Utilization Per Mini-Batch Across Architectures'
+    title = 'Validation CPU Memory Utilization Per Mini-Batch Across Architectures'
     trainsubplot(unet_val.iloc[:, 4], unet25_val.iloc[:, 4], unet50_val.iloc[:, 4], unet75_val.iloc[:, 4],  label, ylabel, title, 4)
 
     ylabel = 'Time (s)'
-    title = 'Training Time Per Mini-Batch Across Architectures'
+    title = 'Validation Time Per Mini-Batch Across Architectures'
     trainsubplot(unet_val.iloc[:, 0], unet25_val.iloc[:, 0], unet50_val.iloc[:, 0], unet75_val.iloc[:, 0],  label, ylabel, title, 5)
 
     ylabel = 'Dice Loss'
