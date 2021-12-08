@@ -1,10 +1,12 @@
 import os
 from stat import S_IRWXU, S_IRWXG
 
+# Path data.
 path = 'C:/Users/harsh/ivadomed/'
 folder = 'data_example_spinegeneric_10x/'
 num = 99
 
+# Creating false data to trick ivadomed into thinking data set is bigger; copies one sample's contents for num additional samples.
 for i in range(2, num + 1):
     copied_dir = path + folder + f'sub-unf01 - Copy ({i})/anat'
 
@@ -40,6 +42,7 @@ for i in range(2, num + 1):
 
     print(f'Done changing file names in {copied_folder}.')
 
+# Creates derivatives/labels for num additional samples.
 deriv = path + folder + 'derivatives/labels/'
 for i in range(2, num + 1):
 
